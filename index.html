@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magazzino Sotto Controllo</title>
+    <!-- Link to the manifest which makes the app installable -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Theme colour for the address bar on mobile devices -->
+    <meta name="theme-color" content="#009688">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Magazzino Sotto Controllo</h1>
+        <nav>
+            <button id="nav-dashboard">Dashboard</button>
+            <button id="nav-merchandise">Merce</button>
+            <button id="nav-menu">Menù / Ricette</button>
+            <button id="nav-report">Report vendite</button>
+            <button id="nav-invoices">Fatture fornitori</button>
+            <button id="nav-waste">Sprechi</button>
+            <button id="nav-orders">Ordini</button>
+        </nav>
+    </header>
+    <main>
+        <!-- Sections will be shown/hidden dynamically -->
+        <section id="section-dashboard" class="active">
+            <h2>Dashboard</h2>
+            <p id="dashboard-summary"></p>
+            <ul id="dashboard-notifications"></ul>
+        </section>
+
+        <section id="section-merchandise" class="hidden">
+            <h2>Gestione merce</h2>
+            <button id="add-merce-btn">Aggiungi merce</button>
+            <table id="merce-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Quantità</th>
+                        <th>Unità</th>
+                        <th>Scadenza</th>
+                        <th>Soglia</th>
+                        <th>Fornitore</th>
+                        <th>Posizione</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="section-menu" class="hidden">
+            <h2>Gestione menù / ricette</h2>
+            <button id="add-recipe-btn">Aggiungi piatto</button>
+            <table id="menu-table">
+                <thead>
+                    <tr>
+                        <th>Piatto</th>
+                        <th>Ingredienti</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="section-report" class="hidden">
+            <h2>Import report vendite</h2>
+            <input type="file" id="report-file" accept=".csv, .txt">
+            <button id="process-report-btn">Scarica ingredienti</button>
+            <pre id="report-output"></pre>
+        </section>
+
+        <section id="section-invoices" class="hidden">
+            <h2>Fatture fornitori</h2>
+            <input type="file" id="invoice-file" accept=".csv, .txt">
+            <button id="process-invoice-btn">Carica fattura</button>
+            <pre id="invoice-output"></pre>
+        </section>
+
+        <section id="section-waste" class="hidden">
+            <h2>Registrazione sprechi / consumi</h2>
+            <form id="waste-form">
+                <input type="text" id="waste-product" placeholder="Prodotto" required>
+                <input type="number" id="waste-qty" placeholder="Quantità" required>
+                <select id="waste-reason">
+                    <option value="scaduto">Scaduto</option>
+                    <option value="preparazione">Errore preparazione</option>
+                    <option value="invenduto">Invenduto</option>
+                    <option value="omaggio">Omaggio</option>
+                    <option value="altro">Altro</option>
+                </select>
+                <button type="submit">Registra</button>
+            </form>
+            <ul id="waste-list"></ul>
+        </section>
+
+        <section id="section-orders" class="hidden">
+            <h2>Ordini consigliati</h2>
+            <ul id="order-list"></ul>
+        </section>
+    </main>
+    <footer>
+        <p>© 2026 Magazzino Sotto Controllo</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
