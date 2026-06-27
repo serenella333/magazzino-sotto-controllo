@@ -74,23 +74,22 @@
 </section>
 
         <section id="section-merchandise" class="hidden">
-            <h2>Gestione merce</h2>
-            <button id="add-merce-btn">Aggiungi merce</button>
-            <table id="merce-table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Quantità</th>
-                        <th>Unità</th>
-                        <th>Scadenza</th>
-                        <th>Soglia</th>
-                        <th>Fornitore</th>
-                        <th>Posizione</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
+            <section id="section-merchandise" class="hidden">
+    <h2>Merce</h2>
+    <p>Catalogo prodotti, giacenze, scadenze, fornitori e posizioni.</p>
+
+    <div class="toolbar-app">
+        <input 
+            id="merce-search" 
+            class="search-input" 
+            type="search" 
+            placeholder="Cerca prodotto, fornitore o posizione..."
+        >
+        <button id="add-merce-btn" type="button">+ Aggiungi merce</button>
+    </div>
+
+    <div id="merce-list" class="product-list"></div>
+</section>
 
         <section id="section-menu" class="hidden">
             <h2>Gestione menù / ricette</h2>
