@@ -46,11 +46,26 @@ const sections = {
 
 function showSection(name) {
   Object.keys(sections).forEach(k => {
-    sections[k].classList.add('hidden');
     sections[k].classList.remove('active');
+    sections[k].classList.add('hidden');
   });
-  sections[name].classList.remove('hidden');
-  sections[name].classList.add('active');
+
+  if (sections[name]) {
+    sections[name].classList.remove('hidden');
+    sections[name].classList.add('active');
+  }
+
+  if (name === 'merchandise') {
+    renderMerchTable();
+  }
+
+  if (name === 'menu') {
+    renderMenuTable();
+  }
+
+  if (name === 'orders') {
+    renderOrders();
+  }
 }
 
 // Navigation
