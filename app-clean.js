@@ -56,7 +56,7 @@ function showSection(name) {
   });
 
 }
-}
+
 
 
 function updateDashboard() {
