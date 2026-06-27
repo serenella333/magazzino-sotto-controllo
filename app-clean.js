@@ -34,12 +34,14 @@ function showSection(name) {
     if (sections[key]) {
       sections[key].classList.remove('active');
       sections[key].classList.add('hidden');
+      sections[key].style.display = 'none';
     }
   });
 
   if (sections[name]) {
     sections[name].classList.remove('hidden');
     sections[name].classList.add('active');
+    sections[name].style.display = 'block';
   }
 
   if (name === 'dashboard') updateDashboard();
