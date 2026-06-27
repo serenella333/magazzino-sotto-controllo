@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const sections = {
+  var sezioni = {
     dashboard: document.getElementById('section-dashboard'),
     merchandise: document.getElementById('section-merchandise'),
     menu: document.getElementById('section-menu'),
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     orders: document.getElementById('section-orders')
   };
 
-  const buttons = {
+  var bottoni = {
     dashboard: document.getElementById('nav-dashboard'),
     merchandise: document.getElementById('nav-merchandise'),
     menu: document.getElementById('nav-menu'),
@@ -19,139 +19,127 @@ document.addEventListener('DOMContentLoaded', function () {
     orders: document.getElementById('nav-orders')
   };
 
-  function showOnly(name) {
-    Object.keys(sections).forEach(function (key) {
-      if (sections[key]) {
-        sections[key].style.display = 'none';
-        sections[key].classList.remove('active');
-        sections[key].classList.add('hidden');
+  function leggiMerce() {
+    try {
+      return JSON.parse(localStorage.getItem('magazzino_merce')) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerce(lista) {
+    localStorage.setItem('magazzino_merce', JSON.stringify(lista));
+  }
+
+  function mostraSezione(nome) {
+    Object.keys(sezioni).forEach(function (chiave) {
+      if (sezioni[chiave]) {
+        sezioni[chiave].style.display = 'none';
+        sezioni[chiave].classList.remove('active');
+        sezioni[chiave].classList.add('hidden');
       }
     });
 
-    if (sections[name]) {
-      sections[name].style.display = 'block';
-      sections[name].classList.remove('hidden');
-      sections[name].classList.add('active');
+    if (sezioni[nome]) {
+      sezioni[nome].style.display = 'block';
+      sezioni[nome].classList.remove('hidden');
+      sezioni[nome].classList.add('active');
     }
 
-    Object.keys(buttons).forEach(function (key) {
-      if (buttons[key]) {
-        buttons[key].classList.remove('active');
+    Object.keys(bottoni).forEach(function (chiave) {
+      if (bottoni[chiave]) {
+        bottoni[chiave].classList.remove('active');
       }
     });
 
-    if (buttons[name]) {
-      buttons[name].classList.add('active');
+    if (bottoni[nome]) {
+      bottoni[nome].classList.add('active');
     }
 
-    if (name === 'merchandise') {
-      const list = document.getElementById('merce-list');
-      if (list && list.innerHTML.trim() === '') {
-        list.innerHTML = '<div class="empty-state"><strong>Nessun prodotto inserito</strong><br>Premi + Aggiungi merce per iniziare a catalogare il magazzino.</div>';
-      }
+    if (nome === 'merchandise') {
+      renderMerce();
     }
 
     window.scrollTo(0, 0);
   }
 
-  window.showSection = showOnly;
+  function renderMerce() {
+    var lista = document.getElementById('merce-list');
+    if (!lista) return;
 
-  Object.keys(buttons).forEach(function (key) {
-    if (buttons[key]) {
-      buttons[key].addEventListener('click', function () {
-        showOnly(key);
+    var merce = leggiMerce();
+    lista.innerHTML = '';
+
+    if (merce.length === 0) {
+      var vuoto = document.createElement('div');
+      vuoto.className = 'empty-state';
+      vuoto.innerHTML = '<strong>Nessun prodotto inserito</strong><br>Premi “+ Aggiungi merce” per iniziare a catalogare il magazzino.';
+      lista.appendChild(vuoto);
+      return;
+    }
+
+    merce.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'product-card';
+
+      card.innerHTML =
+        '<div class="product-card-header">' +
+          '<div>' +
+            '<h3>' + item.nome + '</h3>' +
+            '<small>' + (item.fornitore || 'Fornitore non indicato') + '</small>' +
+          '</div>' +
+          '<span class="status-dot status-ok">OK</span>' +
+        '</div>' +
+        '<div class="product-meta">' +
+          '<div><span>Quantità</span><strong>' + item.quantita + ' ' + item.unita + '</strong></div>' +
+          '<div><span>Scadenza</span><strong>' + (item.scadenza || 'Non indicata') + '</strong></div>' +
+          '<div><span>Soglia</span><strong>' + (item.soglia || '0') + ' ' + item.unita + '</strong></div>' +
+          '<div><span>Posizione</span><strong>' + (item.posizione || 'Non indicata') + '</strong></div>' +
+        '</div>';
+
+      lista.appendChild(card);
+    });
+  }
+
+  function aggiungiMerce() {
+    var nome = prompt('Nome merce:');
+    if (!nome) return;
+
+    var quantita = prompt('Quantità:') || '0';
+    var unita = prompt('Unità di misura: kg, g, l, pz...') || '';
+    var scadenza = prompt('Scadenza, formato AAAA-MM-GG oppure lascia vuoto:') || '';
+    var soglia = prompt('Soglia minima:') || '0';
+    var fornitore = prompt('Fornitore:') || '';
+    var posizione = prompt('Posizione: frigo, freezer, scaffale...') || '';
+
+    var merce = leggiMerce();
+
+    merce.push({
+      nome: nome,
+      quantita: quantita,
+      unita: unita,
+      scadenza: scadenza,
+      soglia: soglia,
+      fornitore: fornitore,
+      posizione: posizione
+    });
+
+    salvaMerce(merce);
+    renderMerce();
+  }
+
+  Object.keys(bottoni).forEach(function (chiave) {
+    if (bottoni[chiave]) {
+      bottoni[chiave].addEventListener('click', function () {
+        mostraSezione(chiave);
       });
     }
   });
 
-let merce = JSON.parse(localStorage.getItem('magazzino_merce') || '[]');
-
-function salvaMerce() {
-  localStorage.setItem('magazzino_merce', JSON.stringify(merce));
-}
-
-function renderMerce() {
-  const list = document.getElementById('merce-list');
-  if (!list) return;
-
-  if (merce.length === 0) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <strong>Nessun prodotto inserito</strong><br>
-        Premi “+ Aggiungi merce” per iniziare a catalogare il magazzino.
-      </div>
-    `;
-    return;
+  var addMerceBtn = document.getElementById('add-merce-btn');
+  if (addMerceBtn) {
+    addMerceBtn.addEventListener('click', aggiungiMerce);
   }
 
-  list.innerHTML = '';
-
-  merce.forEach(function (item) {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-
-    card.innerHTML = `
-      <div class="product-card-header">
-        <div>
-          <h3>${item.nome}</h3>
-          <small>${item.fornitore || 'Fornitore non indicato'}</small>
-        </div>
-        <span class="status-dot status-ok">OK</span>
-      </div>
-
-      <div class="product-meta">
-        <div>
-          <span>Quantità</span>
-          <strong>${item.quantita} ${item.unita}</strong>
-        </div>
-        <div>
-          <span>Scadenza</span>
-          <strong>${item.scadenza || 'Non indicata'}</strong>
-        </div>
-        <div>
-          <span>Soglia</span>
-          <strong>${item.soglia || 0} ${item.unita}</strong>
-        </div>
-        <div>
-          <span>Posizione</span>
-          <strong>${item.posizione || 'Non indicata'}</strong>
-        </div>
-      </div>
-    `;
-
-    list.appendChild(card);
-  });
-}
-
-const addMerceBtn = document.getElementById('add-merce-btn');
-if (addMerceBtn) {
-  addMerceBtn.addEventListener('click', function () {
-    const nome = prompt('Nome merce:');
-    if (!nome) return;
-
-    const quantita = prompt('Quantità:') || '0';
-    const unita = prompt('Unità di misura: kg, g, l, pz...') || '';
-    const scadenza = prompt('Scadenza, formato AAAA-MM-GG oppure lascia vuoto:') || '';
-    const soglia = prompt('Soglia minima:') || '0';
-    const fornitore = prompt('Fornitore:') || '';
-    const posizione = prompt('Posizione: frigo, freezer, scaffale...') || '';
-
-    merce.push({
-      nome,
-      quantita,
-      unita,
-      scadenza,
-      soglia,
-      fornitore,
-      posizione
-    });
-
-    salvaMerce();
-    renderMerce();
-  });
-}
-
-renderMerce();
-
-  showOnly('dashboard');
+  mostraSezione('dashboard');
 });
