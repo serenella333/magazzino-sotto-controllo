@@ -69,28 +69,32 @@ function showSection(name) {
 }
 
 // Navigation
-document.getElementById('nav-dashboard').addEventListener('click', () => showSection('dashboard'));
+document.getElementById('nav-dashboard').addEventListener('click', () => {
+  showSection('dashboard');
+});
+
 document.getElementById('nav-merchandise').addEventListener('click', () => {
   showSection('merchandise');
-  renderMerchTable();
 });
+
 document.getElementById('nav-menu').addEventListener('click', () => {
   showSection('menu');
-  renderMenuTable();
 });
+
 document.getElementById('nav-report').addEventListener('click', () => {
   showSection('report');
 });
+
 document.getElementById('nav-invoices').addEventListener('click', () => {
   showSection('invoices');
 });
+
 document.getElementById('nav-waste').addEventListener('click', () => {
   showSection('waste');
-  renderWasteList();
 });
+
 document.getElementById('nav-orders').addEventListener('click', () => {
   showSection('orders');
-  renderOrders();
 });
 
 // Utility to update dashboard summary and notifications
