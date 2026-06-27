@@ -99,7 +99,6 @@ document.getElementById('nav-orders').addEventListener('click', () => {
 
 // Utility to update dashboard summary and notifications
 function updateDashboard() {
-  function updateDashboard() {
   const summaryEl = document.getElementById('dashboard-summary');
   const notificationsEl = document.getElementById('dashboard-notifications');
 
