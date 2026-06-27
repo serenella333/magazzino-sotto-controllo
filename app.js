@@ -459,8 +459,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMenuTable();
   renderWasteList();
   renderOrders();
-});
 
+  const merceSearch = document.getElementById('merce-search');
+  if (merceSearch) {
+    merceSearch.addEventListener('input', renderMerchTable);
+  }
+});
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
