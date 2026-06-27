@@ -160,27 +160,6 @@ function updateDashboard() {
     }
   }
 }
-  const summaryEl = document.getElementById('dashboard-summary');
-  const notificationsEl = document.getElementById('dashboard-notifications');
-  const totalItems = merch.length;
-  const lowStock = merch.filter(item => item.qty <= item.threshold).length;
-  const expiring = merch.filter(item => item.expiry && new Date(item.expiry) < new Date(Date.now() + 72 * 3600 * 1000)).length;
-  summaryEl.textContent = `Totale prodotti: ${totalItems}. Prodotti sotto soglia: ${lowStock}. Prodotti in scadenza (72h): ${expiring}.`;
-  // Notifications: show low stock and expiring items
-  notificationsEl.innerHTML = '';
-  merch.forEach(item => {
-    if (item.qty <= item.threshold) {
-      const li = document.createElement('li');
-      li.textContent = `${item.name}: sotto soglia (qta ${item.qty})`;
-      notificationsEl.appendChild(li);
-    }
-    if (item.expiry && new Date(item.expiry) < new Date(Date.now() + 72 * 3600 * 1000)) {
-      const li = document.createElement('li');
-      li.textContent = `${item.name}: in scadenza il ${item.expiry}`;
-      notificationsEl.appendChild(li);
-    }
-  });
-}
 
 /* =======================
  * Merchandise functions
