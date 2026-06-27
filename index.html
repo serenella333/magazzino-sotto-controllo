@@ -30,9 +30,48 @@
         <!-- Sections will be shown/hidden dynamically -->
         <section id="section-dashboard" class="active">
             <h2>Dashboard</h2>
-            <p id="dashboard-summary"></p>
-            <ul id="dashboard-notifications"></ul>
-        </section>
+            <section id="section-dashboard" class="active">
+    <h2>Dashboard</h2>
+    <p>Controllo rapido di magazzino, scadenze, ordini e sprechi.</p>
+
+    <div class="card-grid">
+        <div class="metric-card">
+            <span>Prodotti totali</span>
+            <strong id="dashboard-total-products">0</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>Sotto soglia</span>
+            <strong id="dashboard-low-stock">0</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>In scadenza</span>
+            <strong id="dashboard-expiring">0</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>Ordini consigliati</span>
+            <strong id="dashboard-orders">0</strong>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Agente operativo</h3>
+        <p id="dashboard-summary"></p>
+        <ul id="dashboard-notifications"></ul>
+    </div>
+
+    <div class="panel">
+        <h3>Azioni rapide</h3>
+        <div class="inline-actions">
+            <button type="button" onclick="showSection('merchandise')">Aggiungi merce</button>
+            <button type="button" onclick="showSection('menu')">Crea ricetta</button>
+            <button type="button" onclick="showSection('report')">Carica report vendite</button>
+            <button type="button" onclick="showSection('orders')">Vedi ordini</button>
+        </div>
+    </div>
+</section>
 
         <section id="section-merchandise" class="hidden">
             <h2>Gestione merce</h2>
