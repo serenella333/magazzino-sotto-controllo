@@ -27,7 +27,6 @@ function getSections() {
     orders: document.getElementById('section-orders')
   };
 }
-
 function showSection(name) {
   const sections = getSections();
 
@@ -48,7 +47,17 @@ function showSection(name) {
   if (name === 'menu') renderRecipes();
   if (name === 'orders') renderOrders();
   if (name === 'waste') renderWaste();
+  window.scrollTo({
+
+    top: 0,
+
+    behavior: 'smooth'
+
+  });
+
 }
+}
+
 
 function updateDashboard() {
   const total = merch.length;
