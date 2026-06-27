@@ -168,15 +168,17 @@ function updateDashboard() {
  * ======================= */
 
 function renderMerchTable() {
-    function renderMerchTable() {
   const container = document.getElementById('merce-list');
-  if (!container) return;
+  if (!container) {
+    console.log('Contenitore merce-list non trovato');
+    return;
+  }
 
   const searchInput = document.getElementById('merce-search');
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
   const filteredMerch = merch.filter(item => {
-    const text = `${item.name} ${item.supplier} ${item.location} ${item.unit}`.toLowerCase();
+    const text = `${item.name || ''} ${item.supplier || ''} ${item.location || ''} ${item.unit || ''}`.toLowerCase();
     return text.includes(query);
   });
 
@@ -185,7 +187,71 @@ function renderMerchTable() {
   if (filteredMerch.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <strong>Nessun prodotto trovato</strong><br>
+        <strong>Nessun prodotto inserito</strong><br>
+        Premi “+ Aggiungi merce” per iniziare a catalogare il magazzino.
+      </div>
+    `;
+    updateDashboard();
+    return;
+  }
+
+  filteredMerch.forEach(item => {
+    const isLow = Number(item.qty) <= Number(item.threshold);
+    const isExpiring = item.expiry && new Date(item.expiry) < new Date(Date.now() + 72 * 3600 * 1000);
+
+    let statusClass = 'status-ok';
+    let statusText = 'OK';
+
+    if (isLow) {
+      statusClass = 'status-low';
+      statusText = 'Sotto soglia';
+    }
+
+    if (isExpiring) {
+      statusClass = 'status-expiring';
+      statusText = 'In scadenza';
+    }
+
+    const card = document.createElement('div');
+    card.className = 'product-card';
+
+    card.innerHTML = `
+      <div class="product-card-header">
+        <div>
+          <h3>${item.name || 'Prodotto senza nome'}</h3>
+          <small>${item.supplier || 'Fornitore non indicato'}</small>
+        </div>
+        <span class="status-dot ${statusClass}">${statusText}</span>
+      </div>
+
+      <div class="product-meta">
+        <div>
+          <span>Giacenza</span>
+          <strong>${item.qty || 0} ${item.unit || ''}</strong>
+        </div>
+
+        <div>
+          <span>Soglia minima</span>
+          <strong>${item.threshold || 0} ${item.unit || ''}</strong>
+        </div>
+
+        <div>
+          <span>Scadenza</span>
+          <strong>${item.expiry || 'Non indicata'}</strong>
+        </div>
+
+        <div>
+          <span>Posizione</span>
+          <strong>${item.location || 'Non indicata'}</strong>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  updateDashboard();
+}
         Aggiungi la prima merce o modifica la ricerca.
       </div>
     `;
