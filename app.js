@@ -80,6 +80,67 @@ document.getElementById('nav-orders').addEventListener('click', () => {
 
 // Utility to update dashboard summary and notifications
 function updateDashboard() {
+  function updateDashboard() {
+  const summaryEl = document.getElementById('dashboard-summary');
+  const notificationsEl = document.getElementById('dashboard-notifications');
+
+  const totalItems = merch.length;
+
+  const lowStockItems = merch.filter(item => Number(item.qty) <= Number(item.threshold));
+  const lowStock = lowStockItems.length;
+
+  const expiringItems = merch.filter(item => {
+    if (!item.expiry) return false;
+    const expiryDate = new Date(item.expiry);
+    const limitDate = new Date(Date.now() + 72 * 3600 * 1000);
+    return expiryDate <= limitDate;
+  });
+
+  const expiring = expiringItems.length;
+  const orders = lowStock;
+
+  const totalProductsCard = document.getElementById('dashboard-total-products');
+  const lowStockCard = document.getElementById('dashboard-low-stock');
+  const expiringCard = document.getElementById('dashboard-expiring');
+  const ordersCard = document.getElementById('dashboard-orders');
+
+  if (totalProductsCard) totalProductsCard.textContent = totalItems;
+  if (lowStockCard) lowStockCard.textContent = lowStock;
+  if (expiringCard) expiringCard.textContent = expiring;
+  if (ordersCard) ordersCard.textContent = orders;
+
+  if (summaryEl) {
+    if (totalItems === 0) {
+      summaryEl.textContent = 'Il magazzino è ancora vuoto. Inizia inserendo la merce principale.';
+    } else if (lowStock === 0 && expiring === 0) {
+      summaryEl.textContent = 'Situazione sotto controllo: nessun prodotto sotto soglia e nessuna scadenza urgente.';
+    } else {
+      summaryEl.textContent = `Attenzione: ci sono ${lowStock} prodotti sotto soglia e ${expiring} prodotti in scadenza entro 72 ore.`;
+    }
+  }
+
+  if (notificationsEl) {
+    notificationsEl.innerHTML = '';
+
+    lowStockItems.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = `${item.name}: sotto soglia. Giacenza attuale ${item.qty} ${item.unit || ''}.`;
+      notificationsEl.appendChild(li);
+    });
+
+    expiringItems.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = `${item.name}: controlla la scadenza ${item.expiry}.`;
+      notificationsEl.appendChild(li);
+    });
+
+    if (lowStock === 0 && expiring === 0 && totalItems > 0) {
+      const li = document.createElement('li');
+      li.textContent = 'Nessun avviso urgente.';
+      notificationsEl.appendChild(li);
+    }
+  }
+}
   const summaryEl = document.getElementById('dashboard-summary');
   const notificationsEl = document.getElementById('dashboard-notifications');
   const totalItems = merch.length;
