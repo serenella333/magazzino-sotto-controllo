@@ -185,6 +185,24 @@ qq<!DOCTYPE html>
             <input type="file" id="report-file" accept=".csv, .txt">
             <button id="process-report-btn">Scarica ingredienti</button>
             <pre id="report-output"></pre>
+            <div class="quick-sale-box">
+  <h3>Vendita rapida</h3>
+  <p>Seleziona un piatto venduto e aggiorna subito il magazzino.</p>
+
+  <label>
+    Piatto venduto
+    <select id="quick-sale-recipe">
+      <option value="">Seleziona una ricetta</option>
+    </select>
+  </label>
+
+  <label>
+    Quantità venduta
+    <input id="quick-sale-qty" type="number" step="1" min="1" value="1">
+  </label>
+
+  <button id="quick-sale-btn" type="button">Scala ingredienti</button>
+</div>
         </section>
 
         <section id="section-invoices" class="hidden">
