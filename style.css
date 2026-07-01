@@ -1307,3 +1307,36 @@ footer {
   margin-top: 18px;
   font-weight: 800;
 }
+.invoice-box {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 22px;
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.invoice-box h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.invoice-box p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+#invoice-output {
+  white-space: pre-wrap;
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 20px;
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
