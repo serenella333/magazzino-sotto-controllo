@@ -2008,3 +2008,166 @@ document.addEventListener("DOMContentLoaded", function () {
 
   creaPulsanteEsempio();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var recipeSelect = document.getElementById("quick-sale-recipe");
+  var qtyInput = document.getElementById("quick-sale-qty");
+  var quickSaleBtn = document.getElementById("quick-sale-btn");
+  var output = document.getElementById("report-output");
+
+  function leggiMerceVenditaRapida() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceVenditaRapida(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function leggiRicetteVenditaRapida() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_ricette")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function normalizzaVenditaRapida(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function numeroVenditaRapida(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function arrotondaVenditaRapida(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function aggiornaSelectRicette() {
+    if (!recipeSelect) return;
+
+    var ricette = leggiRicetteVenditaRapida();
+
+    recipeSelect.innerHTML = "";
+
+    var prima = document.createElement("option");
+    prima.value = "";
+    prima.textContent = "Seleziona una ricetta";
+    recipeSelect.appendChild(prima);
+
+    ricette.forEach(function (ricetta) {
+      var option = document.createElement("option");
+      option.value = ricetta.nome;
+      option.textContent = ricetta.nome;
+      recipeSelect.appendChild(option);
+    });
+  }
+
+  function scalaIngredientiDaRicetta(nomeRicetta, quantitaVenduta) {
+    var merce = leggiMerceVenditaRapida();
+    var ricette = leggiRicetteVenditaRapida();
+
+    var ricetta = ricette.find(function (r) {
+      return normalizzaVenditaRapida(r.nome) === normalizzaVenditaRapida(nomeRicetta);
+    });
+
+    if (!ricetta) {
+      return "Ricetta non trovata.";
+    }
+
+    var log = [];
+
+    log.push("VENDITA RAPIDA");
+    log.push("");
+    log.push("Piatto: " + ricetta.nome);
+    log.push("Quantità venduta: " + quantitaVenduta);
+    log.push("");
+
+    (ricetta.ingredienti || []).forEach(function (ingrediente) {
+      var prodotto = merce.find(function (m) {
+        return normalizzaVenditaRapida(m.nome) === normalizzaVenditaRapida(ingrediente.nome);
+      });
+
+      if (!prodotto) {
+        log.push("Ingrediente non trovato in magazzino: " + ingrediente.nome);
+        return;
+      }
+
+      var consumo = numeroVenditaRapida(ingrediente.quantita) * quantitaVenduta;
+      var giacenza = numeroVenditaRapida(prodotto.quantita);
+      var nuovaGiacenza = giacenza - consumo;
+
+      if (nuovaGiacenza < 0) {
+        nuovaGiacenza = 0;
+      }
+
+      prodotto.quantita = String(arrotondaVenditaRapida(nuovaGiacenza));
+
+      log.push(
+        prodotto.nome +
+          ": -" +
+          arrotondaVenditaRapida(consumo) +
+          " " +
+          (prodotto.unita || ingrediente.unita || "") +
+          " | nuova giacenza: " +
+          prodotto.quantita +
+          " " +
+          (prodotto.unita || "")
+      );
+    });
+
+    salvaMerceVenditaRapida(merce);
+
+    log.push("");
+    log.push("Magazzino aggiornato.");
+    log.push("Controlla Dashboard, Merce e Ordini consigliati.");
+
+    return log.join("\n");
+  }
+
+  if (quickSaleBtn) {
+    quickSaleBtn.addEventListener("click", function () {
+      var nomeRicetta = recipeSelect ? recipeSelect.value : "";
+      var quantita = qtyInput ? numeroVenditaRapida(qtyInput.value) : 1;
+
+      if (!nomeRicetta) {
+        if (output) output.textContent = "Seleziona prima una ricetta.";
+        return;
+      }
+
+      if (!quantita || quantita <= 0) {
+        if (output) output.textContent = "Inserisci una quantità valida.";
+        return;
+      }
+
+      var risultato = scalaIngredientiDaRicetta(nomeRicetta, quantita);
+
+      if (output) {
+        output.textContent = risultato;
+      }
+    });
+  }
+
+  var reportBtn = document.getElementById("nav-report");
+  if (reportBtn) {
+    reportBtn.addEventListener("click", function () {
+      aggiornaSelectRicette();
+    });
+  }
+
+  var menuBtn = document.getElementById("nav-menu");
+  if (menuBtn) {
+    menuBtn.addEventListener("click", function () {
+      setTimeout(aggiornaSelectRicette, 500);
+    });
+  }
+
+  aggiornaSelectRicette();
+});
