@@ -1511,3 +1511,95 @@ footer {
 .waste-detail strong {
   font-size: 18px;
 }
+.waste-analysis-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.waste-analysis-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.waste-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.waste-analysis-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.waste-analysis-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.waste-analysis-card strong {
+  font-size: 26px;
+}
+
+.waste-analysis-card small {
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.top-waste-box {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.top-waste-box h4 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.top-waste-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.top-waste-row strong {
+  display: block;
+  font-size: 17px;
+}
+
+.top-waste-row small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.top-waste-row span {
+  background: #ffe8e8;
+  color: #9d2b2b;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .waste-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+}
