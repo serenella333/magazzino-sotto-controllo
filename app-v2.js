@@ -993,3 +993,125 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(renderMerceEdit, 500);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("merce-form");
+
+  function leggiMerceModifica() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceModifica(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function aggiungiPulsanteModifica() {
+    var cards = document.querySelectorAll("#merce-list .product-card");
+
+    cards.forEach(function (card, index) {
+      if (card.querySelector(".edit-btn")) return;
+
+      var actions = card.querySelector(".card-actions");
+
+      if (!actions) {
+        actions = document.createElement("div");
+        actions.className = "card-actions";
+        card.appendChild(actions);
+      }
+
+      var modifica = document.createElement("button");
+      modifica.type = "button";
+      modifica.className = "edit-btn";
+      modifica.textContent = "Modifica";
+
+      modifica.addEventListener("click", function () {
+        var merce = leggiMerceModifica();
+        var item = merce[index];
+
+        if (!item || !form) return;
+
+        form.classList.remove("hidden-form");
+        form.setAttribute("data-edit-index", index);
+
+        var titolo = form.querySelector("h3");
+        if (titolo) titolo.textContent = "Modifica merce";
+
+        var submit = form.querySelector('button[type="submit"]');
+        if (submit) submit.textContent = "Salva modifiche";
+
+        document.getElementById("merce-nome").value = item.nome || "";
+        document.getElementById("merce-quantita").value = item.quantita || "";
+        document.getElementById("merce-unita").value = item.unita || "";
+        document.getElementById("merce-scadenza").value = item.scadenza || "";
+        document.getElementById("merce-soglia").value = item.soglia || "";
+        document.getElementById("merce-fornitore").value = item.fornitore || "";
+        document.getElementById("merce-posizione").value = item.posizione || "";
+
+        form.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+
+      actions.insertBefore(modifica, actions.firstChild);
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      var editIndex = form.getAttribute("data-edit-index");
+
+      if (editIndex === null || editIndex === "") return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      var merce = leggiMerceModifica();
+      var index = Number(editIndex);
+
+      merce[index] = {
+        nome: document.getElementById("merce-nome").value,
+        quantita: document.getElementById("merce-quantita").value || "0",
+        unita: document.getElementById("merce-unita").value || "",
+        scadenza: document.getElementById("merce-scadenza").value || "",
+        soglia: document.getElementById("merce-soglia").value || "0",
+        fornitore: document.getElementById("merce-fornitore").value || "",
+        posizione: document.getElementById("merce-posizione").value || ""
+      };
+
+      salvaMerceModifica(merce);
+
+      form.removeAttribute("data-edit-index");
+      form.reset();
+      form.classList.add("hidden-form");
+
+      var titolo = form.querySelector("h3");
+      if (titolo) titolo.textContent = "Nuova merce";
+
+      var submit = form.querySelector('button[type="submit"]');
+      if (submit) submit.textContent = "Salva merce";
+
+      location.reload();
+    }, true);
+  }
+
+  var lista = document.getElementById("merce-list");
+
+  if (lista) {
+    var osservatore = new MutationObserver(function () {
+      aggiungiPulsanteModifica();
+    });
+
+    osservatore.observe(lista, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  setTimeout(aggiungiPulsanteModifica, 500);
+  setTimeout(aggiungiPulsanteModifica, 1500);
+  setTimeout(aggiungiPulsanteModifica, 3000);
+});
