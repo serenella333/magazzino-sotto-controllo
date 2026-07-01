@@ -739,3 +739,257 @@ document.addEventListener("DOMContentLoaded", function () {
   setTimeout(aggiungiPulsantiElimina, 500);
   setTimeout(aggiungiPulsantiElimina, 1500);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("merce-form");
+  var list = document.getElementById("merce-list");
+
+  function leggiMerceEdit() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceEdit(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function numeroEdit(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function giorniAllaScadenzaEdit(data) {
+    if (!data) return null;
+
+    var oggi = new Date();
+    oggi.setHours(0, 0, 0, 0);
+
+    var scadenza = new Date(data);
+    scadenza.setHours(0, 0, 0, 0);
+
+    return Math.ceil((scadenza - oggi) / (1000 * 60 * 60 * 24));
+  }
+
+  function statoEdit(item) {
+    var quantita = numeroEdit(item.quantita);
+    var soglia = numeroEdit(item.soglia);
+    var giorni = giorniAllaScadenzaEdit(item.scadenza);
+
+    if (giorni !== null && giorni < 0) {
+      return {
+        testo: "Scaduto",
+        classe: "status-expiring"
+      };
+    }
+
+    if (giorni !== null && giorni <= 3) {
+      return {
+        testo: "In scadenza",
+        classe: "status-expiring"
+      };
+    }
+
+    if (soglia > 0 && quantita <= soglia) {
+      return {
+        testo: "Sotto soglia",
+        classe: "status-low"
+      };
+    }
+
+    return {
+      testo: "OK",
+      classe: "status-ok"
+    };
+  }
+
+  function rigaEdit(label, valore) {
+    var box = document.createElement("div");
+
+    var span = document.createElement("span");
+    span.textContent = label;
+
+    var strong = document.createElement("strong");
+    strong.textContent = valore;
+
+    box.appendChild(span);
+    box.appendChild(strong);
+
+    return box;
+  }
+
+  function renderMerceEdit() {
+    if (!list) return;
+
+    var merce = leggiMerceEdit();
+    list.innerHTML = "";
+
+    if (merce.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "<strong>Nessun prodotto inserito</strong><br>Premi + Aggiungi merce per iniziare a catalogare il magazzino.";
+      list.appendChild(empty);
+      return;
+    }
+
+    merce.forEach(function (item, index) {
+      var stato = statoEdit(item);
+
+      var card = document.createElement("div");
+      card.className = "product-card";
+      card.setAttribute("data-index", index);
+
+      var header = document.createElement("div");
+      header.className = "product-card-header";
+
+      var left = document.createElement("div");
+
+      var title = document.createElement("h3");
+      title.textContent = item.nome || "Prodotto senza nome";
+
+      var supplier = document.createElement("small");
+      supplier.textContent = item.fornitore || "Fornitore non indicato";
+
+      left.appendChild(title);
+      left.appendChild(supplier);
+
+      var badge = document.createElement("span");
+      badge.className = "status-dot " + stato.classe;
+      badge.textContent = stato.testo;
+
+      header.appendChild(left);
+      header.appendChild(badge);
+
+      var meta = document.createElement("div");
+      meta.className = "product-meta";
+
+      meta.appendChild(rigaEdit("Quantità", (item.quantita || "0") + " " + (item.unita || "")));
+      meta.appendChild(rigaEdit("Scadenza", item.scadenza || "Non indicata"));
+      meta.appendChild(rigaEdit("Soglia", (item.soglia || "0") + " " + (item.unita || "")));
+      meta.appendChild(rigaEdit("Posizione", item.posizione || "Non indicata"));
+
+      var actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      var modifica = document.createElement("button");
+      modifica.type = "button";
+      modifica.className = "edit-btn";
+      modifica.textContent = "Modifica";
+
+      modifica.addEventListener("click", function () {
+        apriModifica(index);
+      });
+
+      var elimina = document.createElement("button");
+      elimina.type = "button";
+      elimina.className = "danger-btn";
+      elimina.textContent = "Elimina";
+
+      elimina.addEventListener("click", function () {
+        var conferma = confirm("Vuoi eliminare " + (item.nome || "questo prodotto") + "?");
+        if (!conferma) return;
+
+        var lista = leggiMerceEdit();
+        lista.splice(index, 1);
+        salvaMerceEdit(lista);
+        renderMerceEdit();
+      });
+
+      actions.appendChild(modifica);
+      actions.appendChild(elimina);
+
+      card.appendChild(header);
+      card.appendChild(meta);
+      card.appendChild(actions);
+
+      list.appendChild(card);
+    });
+  }
+
+  function apriModifica(index) {
+    if (!form) return;
+
+    var merce = leggiMerceEdit();
+    var item = merce[index];
+    if (!item) return;
+
+    form.classList.remove("hidden-form");
+    form.setAttribute("data-edit-index", index);
+
+    var titolo = form.querySelector("h3");
+    if (titolo) titolo.textContent = "Modifica merce";
+
+    var submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = "Salva modifiche";
+
+    document.getElementById("merce-nome").value = item.nome || "";
+    document.getElementById("merce-quantita").value = item.quantita || "";
+    document.getElementById("merce-unita").value = item.unita || "";
+    document.getElementById("merce-scadenza").value = item.scadenza || "";
+    document.getElementById("merce-soglia").value = item.soglia || "";
+    document.getElementById("merce-fornitore").value = item.fornitore || "";
+    document.getElementById("merce-posizione").value = item.posizione || "";
+
+    form.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      var editIndex = form.getAttribute("data-edit-index");
+
+      if (editIndex === null || editIndex === "") {
+        setTimeout(renderMerceEdit, 200);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      var merce = leggiMerceEdit();
+      var index = Number(editIndex);
+
+      merce[index] = {
+        nome: document.getElementById("merce-nome").value,
+        quantita: document.getElementById("merce-quantita").value || "0",
+        unita: document.getElementById("merce-unita").value || "",
+        scadenza: document.getElementById("merce-scadenza").value || "",
+        soglia: document.getElementById("merce-soglia").value || "0",
+        fornitore: document.getElementById("merce-fornitore").value || "",
+        posizione: document.getElementById("merce-posizione").value || ""
+      };
+
+      salvaMerceEdit(merce);
+
+      form.removeAttribute("data-edit-index");
+      form.reset();
+      form.classList.add("hidden-form");
+
+      var titolo = form.querySelector("h3");
+      if (titolo) titolo.textContent = "Nuova merce";
+
+      var submit = form.querySelector('button[type="submit"]');
+      if (submit) submit.textContent = "Salva merce";
+
+      renderMerceEdit();
+    }, true);
+  }
+
+  var cancelBtn = document.getElementById("cancel-merce-btn");
+  if (cancelBtn && form) {
+    cancelBtn.addEventListener("click", function () {
+      form.removeAttribute("data-edit-index");
+
+      var titolo = form.querySelector("h3");
+      if (titolo) titolo.textContent = "Nuova merce";
+
+      var submit = form.querySelector('button[type="submit"]');
+      if (submit) submit.textContent = "Salva merce";
+    });
+  }
+
+  setTimeout(renderMerceEdit, 500);
+});
