@@ -1826,3 +1826,185 @@ body.license-locked {
 .license-status-panel p {
   margin: 0;
 }
+.guide-hero {
+  background: linear-gradient(135deg, #e8f8f7, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 26px;
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.guide-hero span {
+  width: fit-content;
+  background: #ffffff;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.guide-hero h3 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.guide-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.guide-card,
+.guide-panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 14px 32px rgba(13, 68, 68, 0.08);
+}
+
+.guide-card {
+  display: grid;
+  gap: 10px;
+}
+
+.guide-number {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.guide-card h3,
+.guide-panel h3 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.guide-card p,
+.guide-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.guide-panel {
+  margin-top: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.guide-routine {
+  display: grid;
+  gap: 12px;
+}
+
+.guide-routine div {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.guide-routine strong {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.install-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.install-box > div {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.install-box h4 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.install-box ol {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.guide-checklist {
+  display: grid;
+  gap: 12px;
+}
+
+.guide-checklist label {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.guide-checklist input {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+#guide-output {
+  white-space: pre-wrap;
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+#nav-guide {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .guide-grid,
+  .install-box {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-hero h3 {
+    font-size: 30px;
+  }
+}
