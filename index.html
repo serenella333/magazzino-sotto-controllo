@@ -87,7 +87,53 @@
         >
         <button id="add-merce-btn" type="button">+ Aggiungi merce</button>
     </div>
+<form id="merce-form" class="app-form hidden-form">
+  <h3>Nuova merce</h3>
 
+  <label>
+    Nome merce
+    <input id="merce-nome" type="text" placeholder="Es. Pomodori, mozzarella, farina..." required>
+  </label>
+
+  <div class="form-grid">
+    <label>
+      Quantità
+      <input id="merce-quantita" type="number" step="0.01" placeholder="Es. 10">
+    </label>
+
+    <label>
+      Unità
+      <input id="merce-unita" type="text" placeholder="kg, g, l, pz">
+    </label>
+  </div>
+
+  <div class="form-grid">
+    <label>
+      Scadenza
+      <input id="merce-scadenza" type="date">
+    </label>
+
+    <label>
+      Soglia minima
+      <input id="merce-soglia" type="number" step="0.01" placeholder="Es. 2">
+    </label>
+  </div>
+
+  <label>
+    Fornitore
+    <input id="merce-fornitore" type="text" placeholder="Es. Metro, caseificio, ortofrutta...">
+  </label>
+
+  <label>
+    Posizione
+    <input id="merce-posizione" type="text" placeholder="Es. Frigo 1, freezer, scaffale secco...">
+  </label>
+
+  <div class="form-actions">
+    <button type="submit">Salva merce</button>
+    <button type="button" id="cancel-merce-btn" class="secondary-btn">Annulla</button>
+  </div>
+</form>
     <div id="merce-list" class="product-list"></div>
 </section>
 
