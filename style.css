@@ -481,3 +481,12 @@ g
     flex-direction: column;
   }
 }
+section,
+section.hidden,
+section.active {
+  display: block !important;
+}
+
+section {
+  scroll-margin-top: 140px;
+}
