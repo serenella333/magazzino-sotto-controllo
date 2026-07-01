@@ -665,3 +665,77 @@ document.addEventListener("DOMContentLoaded", function () {
   setTimeout(aggiornaBadgeMerce, 300);
   setTimeout(aggiornaBadgeMerce, 1000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceElimina() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceElimina(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function aggiungiPulsantiElimina() {
+    var cards = document.querySelectorAll("#merce-list .product-card");
+
+    cards.forEach(function (card) {
+      if (card.querySelector(".card-actions")) return;
+
+      var titolo = card.querySelector("h3");
+      if (!titolo) return;
+
+      var actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      var elimina = document.createElement("button");
+      elimina.type = "button";
+      elimina.className = "danger-btn";
+      elimina.textContent = "Elimina";
+
+      elimina.addEventListener("click", function () {
+        var nome = titolo.textContent.trim();
+
+        var conferma = confirm("Vuoi eliminare " + nome + "?");
+        if (!conferma) return;
+
+        var merce = leggiMerceElimina();
+
+        var nuovaLista = merce.filter(function (item) {
+          return String(item.nome || "").trim() !== nome;
+        });
+
+        salvaMerceElimina(nuovaLista);
+        card.remove();
+
+        if (nuovaLista.length === 0) {
+          var lista = document.getElementById("merce-list");
+          if (lista) {
+            lista.innerHTML = '<div class="empty-state"><strong>Nessun prodotto inserito</strong><br>Premi + Aggiungi merce per iniziare a catalogare il magazzino.</div>';
+          }
+        }
+      });
+
+      actions.appendChild(elimina);
+      card.appendChild(actions);
+    });
+  }
+
+  var lista = document.getElementById("merce-list");
+
+  if (lista) {
+    var osservatore = new MutationObserver(function () {
+      aggiungiPulsantiElimina();
+    });
+
+    osservatore.observe(lista, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  setTimeout(aggiungiPulsantiElimina, 500);
+  setTimeout(aggiungiPulsantiElimina, 1500);
+});
