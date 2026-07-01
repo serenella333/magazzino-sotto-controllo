@@ -404,3 +404,151 @@ document.addEventListener("DOMContentLoaded", function () {
 
   renderMerceForm();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var list = document.getElementById("merce-list");
+  var form = document.getElementById("merce-form");
+  var search = document.getElementById("merce-search");
+
+  function leggiMerceAvanzata() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceAvanzata(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function giorniAllaScadenza(data) {
+    if (!data) return null;
+    var oggi = new Date();
+    var scadenza = new Date(data);
+    var differenza = scadenza - oggi;
+    return Math.ceil(differenza / (1000 * 60 * 60 * 24));
+  }
+
+  function statoProdotto(item) {
+    var quantita = Number(item.quantita || 0);
+    var soglia = Number(item.soglia || 0);
+    var giorni = giorniAllaScadenza(item.scadenza);
+
+    if (giorni !== null && giorni <= 3) {
+      return {
+        testo: "In scadenza",
+        classe: "status-expiring"
+      };
+    }
+
+    if (soglia > 0 && quantita <= soglia) {
+      return {
+        testo: "Sotto soglia",
+        classe: "status-low"
+      };
+    }
+
+    return {
+      testo: "OK",
+      classe: "status-ok"
+    };
+  }
+
+  function creaRigaCard(label, valore) {
+    var box = document.createElement("div");
+
+    var span = document.createElement("span");
+    span.textContent = label;
+
+    var strong = document.createElement("strong");
+    strong.textContent = valore;
+
+    box.appendChild(span);
+    box.appendChild(strong);
+
+    return box;
+  }
+
+  function renderMerceAvanzata() {
+    if (!list) return;
+
+    var merce = leggiMerceAvanzata();
+    var query = search ? search.value.toLowerCase().trim() : "";
+
+    if (query) {
+      merce = merce.filter(function (item) {
+        var testo = [
+          item.nome,
+          item.fornitore,
+          item.posizione,
+          item.unita
+        ].join(" ").toLowerCase();
+
+        return testo.includes(query);
+      });
+    }
+
+    list.innerHTML = "";
+
+    if (merce.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "<strong>Nessun prodotto trovato</strong><br>Aggiungi merce o modifica la ricerca.";
+      list.appendChild(empty);
+      return;
+    }
+
+    merce.forEach(function (item) {
+      var stato = statoProdotto(item);
+
+      var card = document.createElement("div");
+      card.className = "product-card";
+
+      var header = document.createElement("div");
+      header.className = "product-card-header";
+
+      var left = document.createElement("div");
+
+      var title = document.createElement("h3");
+      title.textContent = item.nome || "Prodotto senza nome";
+
+      var supplier = document.createElement("small");
+      supplier.textContent = item.fornitore || "Fornitore non indicato";
+
+      left.appendChild(title);
+      left.appendChild(supplier);
+
+      var badge = document.createElement("span");
+      badge.className = "status-dot " + stato.classe;
+      badge.textContent = stato.testo;
+
+      header.appendChild(left);
+      header.appendChild(badge);
+
+      var meta = document.createElement("div");
+      meta.className = "product-meta";
+
+      meta.appendChild(creaRigaCard("Quantità", (item.quantita || "0") + " " + (item.unita || "")));
+      meta.appendChild(creaRigaCard("Scadenza", item.scadenza || "Non indicata"));
+      meta.appendChild(creaRigaCard("Soglia", (item.soglia || "0") + " " + (item.unita || "")));
+      meta.appendChild(creaRigaCard("Posizione", item.posizione || "Non indicata"));
+
+      card.appendChild(header);
+      card.appendChild(meta);
+
+      list.appendChild(card);
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function () {
+      setTimeout(renderMerceAvanzata, 100);
+    });
+  }
+
+  if (search) {
+    search.addEventListener("input", renderMerceAvanzata);
+  }
+
+  renderMerceAvanzata();
+});
