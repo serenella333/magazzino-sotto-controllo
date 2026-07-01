@@ -2171,3 +2171,67 @@ document.addEventListener("DOMContentLoaded", function () {
 
   aggiornaSelectRicette();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiRicetteSelectFix() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_ricette")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function aggiornaMenuVenditaRapidaFix() {
+    var select = document.getElementById("quick-sale-recipe");
+    if (!select) return;
+
+    var valoreCorrente = select.value;
+    var ricette = leggiRicetteSelectFix();
+
+    select.innerHTML = "";
+
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Seleziona una ricetta";
+    select.appendChild(placeholder);
+
+    ricette.forEach(function (ricetta) {
+      if (!ricetta.nome) return;
+
+      var option = document.createElement("option");
+      option.value = ricetta.nome;
+      option.textContent = ricetta.nome;
+      select.appendChild(option);
+    });
+
+    if (valoreCorrente) {
+      select.value = valoreCorrente;
+    }
+  }
+
+  var select = document.getElementById("quick-sale-recipe");
+
+  if (select) {
+    select.addEventListener("focus", aggiornaMenuVenditaRapidaFix);
+    select.addEventListener("click", aggiornaMenuVenditaRapidaFix);
+    select.addEventListener("touchstart", aggiornaMenuVenditaRapidaFix);
+  }
+
+  var reportBtn = document.getElementById("nav-report");
+  if (reportBtn) {
+    reportBtn.addEventListener("click", function () {
+      setTimeout(aggiornaMenuVenditaRapidaFix, 200);
+      setTimeout(aggiornaMenuVenditaRapidaFix, 800);
+    });
+  }
+
+  var menuBtn = document.getElementById("nav-menu");
+  if (menuBtn) {
+    menuBtn.addEventListener("click", function () {
+      setTimeout(aggiornaMenuVenditaRapidaFix, 800);
+    });
+  }
+
+  setTimeout(aggiornaMenuVenditaRapidaFix, 500);
+  setTimeout(aggiornaMenuVenditaRapidaFix, 1500);
+  setTimeout(aggiornaMenuVenditaRapidaFix, 3000);
+});
