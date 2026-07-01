@@ -279,3 +279,128 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var addBtn = document.getElementById("add-merce-btn");
+  var cancelBtn = document.getElementById("cancel-merce-btn");
+  var form = document.getElementById("merce-form");
+  var list = document.getElementById("merce-list");
+
+  function leggiMerceForm() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceForm(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function creaRiga(label, valore) {
+    var box = document.createElement("div");
+    var span = document.createElement("span");
+    var strong = document.createElement("strong");
+
+    span.textContent = label;
+    strong.textContent = valore;
+
+    box.appendChild(span);
+    box.appendChild(strong);
+
+    return box;
+  }
+
+  function renderMerceForm() {
+    if (!list) return;
+
+    var merce = leggiMerceForm();
+    list.innerHTML = "";
+
+    if (merce.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "<strong>Nessun prodotto inserito</strong><br>Premi + Aggiungi merce per iniziare a catalogare il magazzino.";
+      list.appendChild(empty);
+      return;
+    }
+
+    merce.forEach(function (item) {
+      var card = document.createElement("div");
+      card.className = "product-card";
+
+      var header = document.createElement("div");
+      header.className = "product-card-header";
+
+      var left = document.createElement("div");
+      var title = document.createElement("h3");
+      var supplier = document.createElement("small");
+
+      title.textContent = item.nome || "Prodotto senza nome";
+      supplier.textContent = item.fornitore || "Fornitore non indicato";
+
+      left.appendChild(title);
+      left.appendChild(supplier);
+
+      var badge = document.createElement("span");
+      badge.className = "status-dot status-ok";
+      badge.textContent = "OK";
+
+      header.appendChild(left);
+      header.appendChild(badge);
+
+      var meta = document.createElement("div");
+      meta.className = "product-meta";
+
+      meta.appendChild(creaRiga("Quantità", (item.quantita || "0") + " " + (item.unita || "")));
+      meta.appendChild(creaRiga("Scadenza", item.scadenza || "Non indicata"));
+      meta.appendChild(creaRiga("Soglia", (item.soglia || "0") + " " + (item.unita || "")));
+      meta.appendChild(creaRiga("Posizione", item.posizione || "Non indicata"));
+
+      card.appendChild(header);
+      card.appendChild(meta);
+      list.appendChild(card);
+    });
+  }
+
+  if (addBtn && form) {
+    addBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      form.classList.remove("hidden-form");
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, true);
+  }
+
+  if (cancelBtn && form) {
+    cancelBtn.addEventListener("click", function () {
+      form.reset();
+      form.classList.add("hidden-form");
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      var merce = leggiMerceForm();
+
+      merce.push({
+        nome: document.getElementById("merce-nome").value,
+        quantita: document.getElementById("merce-quantita").value || "0",
+        unita: document.getElementById("merce-unita").value || "",
+        scadenza: document.getElementById("merce-scadenza").value || "",
+        soglia: document.getElementById("merce-soglia").value || "0",
+        fornitore: document.getElementById("merce-fornitore").value || "",
+        posizione: document.getElementById("merce-posizione").value || ""
+      });
+
+      salvaMerceForm(merce);
+      form.reset();
+      form.classList.add("hidden-form");
+      renderMerceForm();
+    });
+  }
+
+  renderMerceForm();
+});
