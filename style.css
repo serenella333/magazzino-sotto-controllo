@@ -1340,3 +1340,58 @@ footer {
   line-height: 1.55;
   color: var(--text);
 }
+.invoice-photo-box {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 22px;
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.invoice-photo-box h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.invoice-photo-box p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.invoice-photo-box label {
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+#ocr-invoice-text {
+  min-height: 180px;
+  resize: vertical;
+}
+
+#ocr-invoice-output {
+  white-space: pre-wrap;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 18px;
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.ocr-help {
+  background: #fff4da;
+  border: 1px solid #f3d28b;
+  color: #8a6400;
+  border-radius: 18px;
+  padding: 14px;
+  font-weight: 800;
+}
