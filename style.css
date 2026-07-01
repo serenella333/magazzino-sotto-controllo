@@ -911,3 +911,58 @@ footer {
     width: auto;
   }
 }
+.app-form {
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px;
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.hidden-form {
+  display: none;
+}
+
+.app-form h3 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+
+.app-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.secondary-btn {
+  background: #e9f3f3;
+  color: var(--primary-dark);
+  box-shadow: none;
+}
+
+.secondary-btn:hover {
+  background: #d8eeee;
+  color: var(--primary-dark);
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
