@@ -4460,3 +4460,236 @@ document.addEventListener("DOMContentLoaded", function () {
   creaSezioneImpostazioni();
   setTimeout(aggiornaTestoOrdineConSettings, 1000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var LICENSE_STORAGE_KEY = "magazzino_license_active";
+
+  var LICENZE_VALIDE = [
+    {
+      codice: "SERENELLA-ADMIN-2026",
+      cliente: "Serenella",
+      scadenza: ""
+    },
+    {
+      codice: "RISTO-001-250",
+      cliente: "Cliente 001",
+      scadenza: ""
+    },
+    {
+      codice: "RISTO-002-250",
+      cliente: "Cliente 002",
+      scadenza: ""
+    }
+  ];
+
+  function normalizzaLicenza(testo) {
+    return String(testo || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "");
+  }
+
+  function trovaLicenza(codiceInserito) {
+    var codicePulito = normalizzaLicenza(codiceInserito);
+
+    return LICENZE_VALIDE.find(function (licenza) {
+      return normalizzaLicenza(licenza.codice) === codicePulito;
+    });
+  }
+
+  function licenzaScaduta(licenza) {
+    if (!licenza || !licenza.scadenza) return false;
+
+    var oggi = new Date();
+    var scadenza = new Date(licenza.scadenza + "T23:59:59");
+
+    return oggi > scadenza;
+  }
+
+  function leggiLicenzaSalvata() {
+    try {
+      return JSON.parse(localStorage.getItem(LICENSE_STORAGE_KEY)) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function licenzaAttivaValida() {
+    var salvata = leggiLicenzaSalvata();
+
+    if (!salvata || !salvata.codice) return false;
+
+    var licenza = trovaLicenza(salvata.codice);
+
+    if (!licenza) return false;
+    if (licenzaScaduta(licenza)) return false;
+
+    return true;
+  }
+
+  function salvaLicenza(licenza) {
+    localStorage.setItem(
+      LICENSE_STORAGE_KEY,
+      JSON.stringify({
+        codice: licenza.codice,
+        cliente: licenza.cliente,
+        attivataIl: new Date().toISOString()
+      })
+    );
+  }
+
+  function creaSchermataLicenza() {
+    if (document.getElementById("license-lock-screen")) return;
+
+    document.body.classList.add("license-locked");
+
+    var overlay = document.createElement("div");
+    overlay.id = "license-lock-screen";
+
+    overlay.innerHTML = `
+      <div class="license-card">
+        <div class="license-badge">Magazzino Sotto Controllo</div>
+
+        <h1>Accesso riservato</h1>
+
+        <p>
+          Questa app è disponibile solo per clienti con licenza attiva.
+          Inserisci il codice ricevuto dopo l’acquisto.
+        </p>
+
+        <form id="license-form">
+          <label>
+            Codice licenza
+            <input id="license-code-input" type="text" placeholder="Es. RISTO-001-250" autocomplete="off" required>
+          </label>
+
+          <button type="submit">Attiva licenza</button>
+        </form>
+
+        <div id="license-message"></div>
+
+        <small>
+          Dopo l’attivazione, l’accesso resterà salvato su questo dispositivo.
+        </small>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    var form = document.getElementById("license-form");
+    var input = document.getElementById("license-code-input");
+    var message = document.getElementById("license-message");
+
+    if (input) {
+      setTimeout(function () {
+        input.focus();
+      }, 300);
+    }
+
+    if (form) {
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        var codice = input ? input.value : "";
+        var licenza = trovaLicenza(codice);
+
+        if (!licenza) {
+          if (message) {
+            message.textContent = "Codice licenza non valido.";
+            message.className = "license-error";
+          }
+          return;
+        }
+
+        if (licenzaScaduta(licenza)) {
+          if (message) {
+            message.textContent = "Questa licenza è scaduta.";
+            message.className = "license-error";
+          }
+          return;
+        }
+
+        salvaLicenza(licenza);
+
+        if (message) {
+          message.textContent = "Licenza attivata. Benvenuto.";
+          message.className = "license-success";
+        }
+
+        setTimeout(function () {
+          overlay.remove();
+          document.body.classList.remove("license-locked");
+          aggiornaPannelloLicenza();
+        }, 600);
+      });
+    }
+  }
+
+  function controllaAccessoLicenza() {
+    if (licenzaAttivaValida()) {
+      document.body.classList.remove("license-locked");
+      var overlay = document.getElementById("license-lock-screen");
+      if (overlay) overlay.remove();
+      return;
+    }
+
+    creaSchermataLicenza();
+  }
+
+  function aggiornaPannelloLicenza() {
+    var settingsSection = document.getElementById("section-settings");
+    if (!settingsSection) return;
+
+    var panel = document.getElementById("license-status-panel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "license-status-panel";
+      panel.className = "settings-panel license-status-panel";
+      settingsSection.appendChild(panel);
+    }
+
+    var salvata = leggiLicenzaSalvata();
+    var licenza = salvata ? trovaLicenza(salvata.codice) : null;
+
+    if (!licenza) {
+      panel.innerHTML = `
+        <h3>Licenza</h3>
+        <p>Nessuna licenza attiva su questo dispositivo.</p>
+      `;
+      return;
+    }
+
+    panel.innerHTML = `
+      <h3>Licenza attiva</h3>
+      <p>Cliente: <strong>${licenza.cliente}</strong></p>
+      <p>Codice: <strong>${licenza.codice}</strong></p>
+      <p>Scadenza: <strong>${licenza.scadenza || "Nessuna scadenza"}</strong></p>
+      <button type="button" id="logout-license-btn" class="secondary-btn">Disattiva licenza da questo dispositivo</button>
+    `;
+
+    var logoutBtn = document.getElementById("logout-license-btn");
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", function () {
+        var conferma = confirm("Vuoi disattivare la licenza da questo dispositivo?");
+
+        if (!conferma) return;
+
+        localStorage.removeItem(LICENSE_STORAGE_KEY);
+        location.reload();
+      });
+    }
+  }
+
+  var settingsBtn = document.getElementById("nav-settings");
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", function () {
+      setTimeout(aggiornaPannelloLicenza, 500);
+    });
+  }
+
+  controllaAccessoLicenza();
+
+  setTimeout(aggiornaPannelloLicenza, 1500);
+});
