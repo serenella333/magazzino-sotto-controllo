@@ -1223,3 +1223,55 @@ footer {
   font-weight: 900;
   color: var(--muted);
 }
+.movements-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.movements-list {
+  display: grid;
+  gap: 12px;
+}
+
+.movement-item {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(13, 68, 68, 0.06);
+}
+
+.movement-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.movement-badge {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.movement-item small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.movement-item strong {
+  display: block;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.movement-item p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--muted);
+}
