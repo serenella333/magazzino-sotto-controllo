@@ -4925,3 +4925,352 @@ document.addEventListener("DOMContentLoaded", function () {
   creaNavGuida();
   creaSezioneGuida();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var LICENSE_SERVER_URL = "https://script.google.com/macros/s/AKfycbzlZvAgR0_Hdqes03oG1YvCREBl6tIy-cw_2H8GZ6KdVL-GFKFFFI5f1t_ZtJK5TX2Qwg/exec";
+
+  var ONLINE_LICENSE_KEY = "magazzino_online_license";
+  var DEVICE_ID_KEY = "magazzino_device_id";
+
+  function normalizzaOnlineLicense(testo) {
+    return String(testo || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "");
+  }
+
+  function getDeviceIdOnlineLicense() {
+    var existing = localStorage.getItem(DEVICE_ID_KEY);
+
+    if (existing) return existing;
+
+    var nuovo =
+      "MSC-" +
+      Date.now().toString(36).toUpperCase() +
+      "-" +
+      Math.random().toString(36).slice(2, 10).toUpperCase();
+
+    localStorage.setItem(DEVICE_ID_KEY, nuovo);
+
+    return nuovo;
+  }
+
+  function leggiLicenzaOnlineSalvata() {
+    try {
+      return JSON.parse(localStorage.getItem(ONLINE_LICENSE_KEY)) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function salvaLicenzaOnline(data, codice, deviceId) {
+    localStorage.setItem(
+      ONLINE_LICENSE_KEY,
+      JSON.stringify({
+        codice: codice,
+        cliente: data.cliente || "",
+        email: data.email || "",
+        admin: !!data.admin,
+        deviceId: deviceId,
+        attivataIl: new Date().toISOString(),
+        ultimoControllo: new Date().toISOString()
+      })
+    );
+  }
+
+  function rimuoviVecchiaSchermataLicenza() {
+    var oldOverlay = document.getElementById("license-lock-screen");
+    if (oldOverlay) oldOverlay.remove();
+
+    document.body.classList.remove("license-locked");
+  }
+
+  function verificaLicenzaOnline(codice, deviceId) {
+    return new Promise(function (resolve, reject) {
+      var callbackName =
+        "licenseCallback_" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).slice(2);
+
+      var script = document.createElement("script");
+
+      window[callbackName] = function (data) {
+        resolve(data);
+
+        try {
+          delete window[callbackName];
+        } catch (e) {
+          window[callbackName] = undefined;
+        }
+
+        if (script && script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+
+      script.onerror = function () {
+        reject();
+
+        try {
+          delete window[callbackName];
+        } catch (e) {
+          window[callbackName] = undefined;
+        }
+
+        if (script && script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+
+      script.src =
+        LICENSE_SERVER_URL +
+        "?callback=" +
+        encodeURIComponent(callbackName) +
+        "&code=" +
+        encodeURIComponent(codice) +
+        "&device=" +
+        encodeURIComponent(deviceId) +
+        "&t=" +
+        Date.now();
+
+      document.body.appendChild(script);
+    });
+  }
+
+  function sbloccaAppOnline() {
+    var overlay = document.getElementById("online-license-lock-screen");
+    if (overlay) overlay.remove();
+
+    var oldOverlay = document.getElementById("license-lock-screen");
+    if (oldOverlay) oldOverlay.remove();
+
+    document.body.classList.remove("license-locked");
+  }
+
+  function creaSchermataLicenzaOnline() {
+    rimuoviVecchiaSchermataLicenza();
+
+    if (document.getElementById("online-license-lock-screen")) return;
+
+    document.body.classList.add("license-locked");
+
+    var deviceId = getDeviceIdOnlineLicense();
+
+    var overlay = document.createElement("div");
+    overlay.id = "online-license-lock-screen";
+
+    overlay.innerHTML = `
+      <div class="license-card">
+        <div class="license-badge">Licenza ristorante</div>
+
+        <h1>Accesso riservato</h1>
+
+        <p>
+          Inserisci il codice licenza ricevuto dopo l’acquisto.
+          La licenza cliente resta attiva su un solo dispositivo.
+        </p>
+
+        <form id="online-license-form">
+          <label>
+            Codice licenza
+            <input id="online-license-code-input" type="text" placeholder="Es. RISTO-TEST-250" autocomplete="off" required>
+          </label>
+
+          <button type="submit">Attiva licenza</button>
+        </form>
+
+        <div id="online-license-message"></div>
+
+        <small>
+          ID dispositivo: ${deviceId}<br>
+          Se cambi telefono, l’assistenza può spostare la licenza.
+        </small>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    var form = document.getElementById("online-license-form");
+    var input = document.getElementById("online-license-code-input");
+    var message = document.getElementById("online-license-message");
+
+    if (input) {
+      setTimeout(function () {
+        input.focus();
+      }, 300);
+    }
+
+    if (form) {
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        var codice = input ? normalizzaOnlineLicense(input.value) : "";
+
+        if (!codice) {
+          if (message) {
+            message.textContent = "Inserisci un codice licenza.";
+            message.className = "license-error";
+          }
+          return;
+        }
+
+        if (message) {
+          message.textContent = "Controllo licenza in corso...";
+          message.className = "";
+        }
+
+        verificaLicenzaOnline(codice, deviceId)
+          .then(function (data) {
+            if (!data || !data.ok) {
+              if (message) {
+                message.textContent =
+                  data && data.messaggio
+                    ? data.messaggio
+                    : "Licenza non valida.";
+                message.className = "license-error";
+              }
+              return;
+            }
+
+            salvaLicenzaOnline(data, codice, deviceId);
+
+            if (message) {
+              message.textContent = data.messaggio || "Licenza attivata.";
+              message.className = "license-success";
+            }
+
+            setTimeout(function () {
+              sbloccaAppOnline();
+              aggiornaPannelloLicenzaOnline();
+            }, 700);
+          })
+          .catch(function () {
+            if (message) {
+              message.textContent =
+                "Non riesco a contattare il server licenze. Controlla la connessione e riprova.";
+              message.className = "license-error";
+            }
+          });
+      });
+    }
+  }
+
+  function controllaLicenzaOnlineAllAvvio() {
+    rimuoviVecchiaSchermataLicenza();
+
+    var salvata = leggiLicenzaOnlineSalvata();
+    var deviceId = getDeviceIdOnlineLicense();
+
+    if (!salvata || !salvata.codice) {
+      creaSchermataLicenzaOnline();
+      return;
+    }
+
+    creaSchermataLicenzaOnline();
+
+    var message = document.getElementById("online-license-message");
+
+    if (message) {
+      message.textContent = "Controllo licenza salvata...";
+      message.className = "";
+    }
+
+    verificaLicenzaOnline(salvata.codice, deviceId)
+      .then(function (data) {
+        if (data && data.ok) {
+          salvaLicenzaOnline(data, salvata.codice, deviceId);
+          sbloccaAppOnline();
+          aggiornaPannelloLicenzaOnline();
+          return;
+        }
+
+        localStorage.removeItem(ONLINE_LICENSE_KEY);
+
+        creaSchermataLicenzaOnline();
+
+        var msg = document.getElementById("online-license-message");
+
+        if (msg) {
+          msg.textContent =
+            data && data.messaggio
+              ? data.messaggio
+              : "Licenza non più valida.";
+          msg.className = "license-error";
+        }
+      })
+      .catch(function () {
+        creaSchermataLicenzaOnline();
+
+        var msg = document.getElementById("online-license-message");
+
+        if (msg) {
+          msg.textContent =
+            "Serve connessione internet per verificare la licenza.";
+          msg.className = "license-error";
+        }
+      });
+  }
+
+  function aggiornaPannelloLicenzaOnline() {
+    var settingsSection = document.getElementById("section-settings");
+    if (!settingsSection) return;
+
+    var panel = document.getElementById("online-license-status-panel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "online-license-status-panel";
+      panel.className = "settings-panel license-status-panel";
+      settingsSection.appendChild(panel);
+    }
+
+    var salvata = leggiLicenzaOnlineSalvata();
+    var deviceId = getDeviceIdOnlineLicense();
+
+    if (!salvata) {
+      panel.innerHTML = `
+        <h3>Licenza online</h3>
+        <p>Nessuna licenza online attiva.</p>
+      `;
+      return;
+    }
+
+    panel.innerHTML = `
+      <h3>Licenza online attiva</h3>
+      <p>Cliente: <strong>${salvata.cliente || "Cliente"}</strong></p>
+      <p>Codice: <strong>${salvata.codice}</strong></p>
+      <p>Tipo: <strong>${salvata.admin ? "Admin illimitato" : "Cliente - 1 dispositivo"}</strong></p>
+      <p>ID dispositivo: <strong>${deviceId}</strong></p>
+
+      <button type="button" id="online-license-logout-btn" class="secondary-btn">
+        Disattiva licenza da questo dispositivo
+      </button>
+    `;
+
+    var logoutBtn = document.getElementById("online-license-logout-btn");
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", function () {
+        var conferma = confirm(
+          "Vuoi disattivare la licenza da questo dispositivo?"
+        );
+
+        if (!conferma) return;
+
+        localStorage.removeItem(ONLINE_LICENSE_KEY);
+        location.reload();
+      });
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    if (!event.target) return;
+
+    if (event.target.id === "nav-settings") {
+      setTimeout(aggiornaPannelloLicenzaOnline, 600);
+    }
+  });
+
+  setTimeout(controllaLicenzaOnlineAllAvvio, 700);
+  setTimeout(aggiornaPannelloLicenzaOnline, 1800);
+});
