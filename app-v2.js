@@ -4117,3 +4117,346 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(creaPannelloCopiaMobile, 1200);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiImpostazioniApp() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_settings")) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function salvaImpostazioniApp(settings) {
+    localStorage.setItem("magazzino_settings", JSON.stringify(settings));
+  }
+
+  function leggiMerceSettings() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numeroSettings(valore) {
+    return Number(String(valore || "0").replace(",", ".")) || 0;
+  }
+
+  function arrotondaSettings(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function creaNavImpostazioni() {
+    if (document.getElementById("nav-settings")) return;
+
+    var navDashboard = document.getElementById("nav-dashboard");
+    if (!navDashboard || !navDashboard.parentNode) return;
+
+    var btn = document.createElement("button");
+    btn.id = "nav-settings";
+    btn.type = "button";
+    btn.textContent = "Impostazioni";
+
+    btn.addEventListener("click", function () {
+      var section = document.getElementById("section-settings");
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+
+      document.querySelectorAll("nav button, .nav button, header button").forEach(function (b) {
+        b.classList.remove("active");
+      });
+
+      btn.classList.add("active");
+    });
+
+    navDashboard.parentNode.appendChild(btn);
+  }
+
+  function creaSezioneImpostazioni() {
+    if (document.getElementById("section-settings")) return;
+
+    var contenitore = document.querySelector("main") || document.body;
+
+    var section = document.createElement("section");
+    section.id = "section-settings";
+    section.className = "hidden";
+
+    section.innerHTML = `
+      <h2>Impostazioni</h2>
+
+      <div class="settings-panel">
+        <h3>Dati del locale</h3>
+        <p>Personalizza l’app per il tuo ristorante e per gli ordini ai fornitori.</p>
+
+        <form id="settings-form" class="app-form">
+          <label>
+            Nome locale
+            <input id="settings-restaurant" type="text" placeholder="Es. Trattoria Da Serenella">
+          </label>
+
+          <label>
+            Nome titolare / referente
+            <input id="settings-owner" type="text" placeholder="Es. Serenella">
+          </label>
+
+          <div class="form-grid">
+            <label>
+              Email
+              <input id="settings-email" type="email" placeholder="esempio@email.it">
+            </label>
+
+            <label>
+              Telefono
+              <input id="settings-phone" type="tel" placeholder="+39...">
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Valuta
+              <select id="settings-currency">
+                <option value="€">€ Euro</option>
+                <option value="$">$ Dollaro</option>
+                <option value="£">£ Sterlina</option>
+              </select>
+            </label>
+
+            <label>
+              Unità preferita
+              <select id="settings-unit">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="pz">pz</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Nota per i fornitori
+            <textarea id="settings-supplier-note" rows="4" placeholder="Es. Consegna preferibilmente entro le 10:00. Grazie."></textarea>
+          </label>
+
+          <button type="submit">Salva impostazioni</button>
+        </form>
+
+        <pre id="settings-output"></pre>
+      </div>
+    `;
+
+    contenitore.appendChild(section);
+
+    caricaImpostazioniNelForm();
+    collegaFormImpostazioni();
+  }
+
+  function caricaImpostazioniNelForm() {
+    var s = leggiImpostazioniApp();
+
+    var restaurant = document.getElementById("settings-restaurant");
+    var owner = document.getElementById("settings-owner");
+    var email = document.getElementById("settings-email");
+    var phone = document.getElementById("settings-phone");
+    var currency = document.getElementById("settings-currency");
+    var unit = document.getElementById("settings-unit");
+    var note = document.getElementById("settings-supplier-note");
+
+    if (restaurant) restaurant.value = s.restaurant || "";
+    if (owner) owner.value = s.owner || "";
+    if (email) email.value = s.email || "";
+    if (phone) phone.value = s.phone || "";
+    if (currency) currency.value = s.currency || "€";
+    if (unit) unit.value = s.unit || "kg";
+    if (note) note.value = s.supplierNote || "";
+  }
+
+  function collegaFormImpostazioni() {
+    var form = document.getElementById("settings-form");
+    var output = document.getElementById("settings-output");
+
+    if (!form) return;
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      var settings = {
+        restaurant: document.getElementById("settings-restaurant").value.trim(),
+        owner: document.getElementById("settings-owner").value.trim(),
+        email: document.getElementById("settings-email").value.trim(),
+        phone: document.getElementById("settings-phone").value.trim(),
+        currency: document.getElementById("settings-currency").value,
+        unit: document.getElementById("settings-unit").value,
+        supplierNote: document.getElementById("settings-supplier-note").value.trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      salvaImpostazioniApp(settings);
+
+      if (output) {
+        output.textContent =
+          "Impostazioni salvate.\n\n" +
+          "Locale: " + (settings.restaurant || "Non indicato") + "\n" +
+          "Referente: " + (settings.owner || "Non indicato") + "\n" +
+          "Valuta: " + settings.currency + "\n" +
+          "Unità preferita: " + settings.unit;
+      }
+
+      aggiornaTestoOrdineConSettings();
+      alert("Impostazioni salvate.");
+    });
+  }
+
+  function creaTestoOrdineConSettings() {
+    var settings = leggiImpostazioniApp();
+    var merce = leggiMerceSettings();
+
+    var prodotti = merce.filter(function (item) {
+      var quantita = numeroSettings(item.quantita);
+      var soglia = numeroSettings(item.soglia);
+
+      return soglia > 0 && quantita <= soglia;
+    });
+
+    if (prodotti.length === 0) {
+      return "Nessun ordine urgente. Le quantità sono sopra soglia.";
+    }
+
+    var gruppi = {};
+
+    prodotti.forEach(function (item) {
+      var fornitore = item.fornitore && item.fornitore.trim()
+        ? item.fornitore.trim()
+        : "Fornitore non indicato";
+
+      if (!gruppi[fornitore]) {
+        gruppi[fornitore] = [];
+      }
+
+      gruppi[fornitore].push(item);
+    });
+
+    var nomeLocale = settings.restaurant || "Magazzino Sotto Controllo";
+
+    var testo = "ORDINE CONSIGLIATO\n";
+    testo += nomeLocale + "\n";
+    testo += new Date().toLocaleDateString("it-IT") + "\n";
+
+    if (settings.owner) testo += "Referente: " + settings.owner + "\n";
+    if (settings.phone) testo += "Telefono: " + settings.phone + "\n";
+    if (settings.email) testo += "Email: " + settings.email + "\n";
+
+    testo += "\n";
+
+    Object.keys(gruppi).forEach(function (fornitore) {
+      testo += "FORNITORE: " + fornitore + "\n";
+
+      gruppi[fornitore].forEach(function (item) {
+        var quantita = numeroSettings(item.quantita);
+        var soglia = numeroSettings(item.soglia);
+        var suggerito = arrotondaSettings(Math.max(soglia * 2 - quantita, soglia));
+
+        testo += "- " + item.nome + ": ordinare circa " + suggerito + " " + (item.unita || settings.unit || "") + "\n";
+        testo += "  Giacenza attuale: " + quantita + " " + (item.unita || settings.unit || "") + " | Soglia: " + soglia + "\n";
+      });
+
+      testo += "\n";
+    });
+
+    if (settings.supplierNote) {
+      testo += "NOTA:\n" + settings.supplierNote + "\n";
+    }
+
+    return testo.trim();
+  }
+
+  function copiaOrdineConSettings() {
+    var testo = creaTestoOrdineConSettings();
+
+    var textarea =
+      document.getElementById("quick-orders-text") ||
+      document.getElementById("orders-copy-text");
+
+    if (textarea) {
+      textarea.value = testo;
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(testo).then(function () {
+        alert("Ordine copiato con i dati del locale.");
+      }).catch(function () {
+        alert("Non riesco a copiare automaticamente. Tieni premuto sul testo e fai Copia.");
+      });
+    } else if (textarea) {
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      document.execCommand("copy");
+      alert("Ordine copiato.");
+    }
+  }
+
+  function condividiOrdineConSettings() {
+    var testo = creaTestoOrdineConSettings();
+
+    var textarea =
+      document.getElementById("quick-orders-text") ||
+      document.getElementById("orders-copy-text");
+
+    if (textarea) {
+      textarea.value = testo;
+    }
+
+    if (navigator.share) {
+      navigator.share({
+        title: "Ordine consigliato",
+        text: testo
+      }).catch(function () {});
+    } else {
+      copiaOrdineConSettings();
+    }
+  }
+
+  function aggiornaTestoOrdineConSettings() {
+    var testo = creaTestoOrdineConSettings();
+
+    var textarea1 = document.getElementById("quick-orders-text");
+    var textarea2 = document.getElementById("orders-copy-text");
+
+    if (textarea1) textarea1.value = testo;
+    if (textarea2) textarea2.value = testo;
+  }
+
+  document.addEventListener("click", function (event) {
+    if (!event.target) return;
+
+    if (
+      event.target.id === "quick-copy-orders-btn" ||
+      event.target.id === "copy-orders-text-btn"
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      copiaOrdineConSettings();
+    }
+
+    if (event.target.id === "quick-share-orders-btn") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      condividiOrdineConSettings();
+    }
+  }, true);
+
+  var ordersBtn = document.getElementById("nav-orders");
+  if (ordersBtn) {
+    ordersBtn.addEventListener("click", function () {
+      setTimeout(aggiornaTestoOrdineConSettings, 500);
+    });
+  }
+
+  creaNavImpostazioni();
+  creaSezioneImpostazioni();
+  setTimeout(aggiornaTestoOrdineConSettings, 1000);
+});
