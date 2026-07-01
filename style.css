@@ -966,3 +966,19 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.danger-btn {
+  background: #ffe8e8;
+  color: #9d2b2b;
+  box-shadow: none;
+}
+
+.danger-btn:hover {
+  background: #ffd4d4;
+  color: #7d1f1f;
+}
