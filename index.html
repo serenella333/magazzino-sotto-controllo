@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+qq<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -140,6 +140,35 @@
         <section id="section-menu" class="hidden">
             <h2>Gestione menù / ricette</h2>
             <button id="add-recipe-btn">Aggiungi piatto</button>
+            <datalist id="merce-names"></datalist>
+
+<form id="recipe-form" class="app-form hidden-form">
+  <h3>Nuova ricetta</h3>
+
+  <label>
+    Nome piatto
+    <input id="recipe-name" type="text" placeholder="Es. Pizza margherita, carbonara..." required>
+  </label>
+
+  <div class="recipe-form-head">
+    <strong>Ingredienti per 1 porzione</strong>
+    <button type="button" id="add-ingredient-row" class="secondary-btn">+ Ingrediente</button>
+  </div>
+
+  <div id="ingredient-rows" class="ingredient-rows"></div>
+
+  <div class="form-actions">
+    <button type="submit">Salva ricetta</button>
+    <button type="button" id="cancel-recipe-btn" class="secondary-btn">Annulla</button>
+  </div>
+</form>
+
+<div id="recipe-list" class="recipe-list">
+  <div class="empty-state">
+    <strong>Nessuna ricetta inserita</strong><br>
+    Premi “Aggiungi piatto” per creare la prima ricetta.
+  </div>
+</div>
             <table id="menu-table">
                 <thead>
                     <tr>
