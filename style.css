@@ -1275,3 +1275,14 @@ footer {
   font-size: 15px;
   color: var(--muted);
 }
+#section-dashboard > h2:first-child {
+  display: none;
+}
+
+#section-dashboard {
+  padding-top: 22px;
+}
+
+#section-dashboard .panel:first-of-type {
+  margin-top: 0;
+}
