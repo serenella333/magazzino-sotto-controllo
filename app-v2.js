@@ -4693,3 +4693,235 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(aggiornaPannelloLicenza, 1500);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var GUIDE_CHECKLIST_KEY = "magazzino_guide_checklist";
+
+  function leggiChecklistGuida() {
+    try {
+      return JSON.parse(localStorage.getItem(GUIDE_CHECKLIST_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function salvaChecklistGuida(dati) {
+    localStorage.setItem(GUIDE_CHECKLIST_KEY, JSON.stringify(dati));
+  }
+
+  function creaNavGuida() {
+    if (document.getElementById("nav-guide")) return;
+
+    var navSettings = document.getElementById("nav-settings");
+    var navDashboard = document.getElementById("nav-dashboard");
+    var riferimento = navSettings || navDashboard;
+
+    if (!riferimento || !riferimento.parentNode) return;
+
+    var btn = document.createElement("button");
+    btn.id = "nav-guide";
+    btn.type = "button";
+    btn.textContent = "Guida";
+
+    btn.addEventListener("click", function () {
+      var section = document.getElementById("section-guide");
+
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+
+      document.querySelectorAll("nav button, .nav button, header button").forEach(function (b) {
+        b.classList.remove("active");
+      });
+
+      btn.classList.add("active");
+    });
+
+    riferimento.parentNode.appendChild(btn);
+  }
+
+  function creaSezioneGuida() {
+    if (document.getElementById("section-guide")) return;
+
+    var contenitore = document.querySelector("main") || document.body;
+
+    var section = document.createElement("section");
+    section.id = "section-guide";
+    section.className = "hidden";
+
+    section.innerHTML = `
+      <h2>Guida rapida</h2>
+
+      <div class="guide-hero">
+        <span>Magazzino Sotto Controllo</span>
+        <h3>Inizia da qui</h3>
+        <p>
+          Questa guida ti accompagna nei primi passaggi per configurare l’app
+          e usarla ogni giorno nel tuo locale.
+        </p>
+      </div>
+
+      <div class="guide-grid">
+        <div class="guide-card">
+          <div class="guide-number">1</div>
+          <h3>Compila Merce</h3>
+          <p>
+            Inserisci i prodotti che hai in magazzino: quantità, unità,
+            soglia minima, fornitore, scadenza e posizione.
+          </p>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-number">2</div>
+          <h3>Crea Ricette</h3>
+          <p>
+            Vai su Menù/Ricette e inserisci i piatti con gli ingredienti usati.
+            Questo serve per scalare automaticamente la merce dopo le vendite.
+          </p>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-number">3</div>
+          <h3>Controlla Ordini</h3>
+          <p>
+            Quando un prodotto scende sotto soglia, l’app lo mostra negli
+            Ordini consigliati e prepara il testo da inviare al fornitore.
+          </p>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-number">4</div>
+          <h3>Registra Sprechi</h3>
+          <p>
+            Segna scaduti, invenduto, errori, omaggi o staff meal.
+            L’app scala automaticamente la merce e aggiorna l’analisi sprechi.
+          </p>
+        </div>
+      </div>
+
+      <div class="guide-panel">
+        <h3>Uso quotidiano consigliato</h3>
+
+        <div class="guide-routine">
+          <div>
+            <strong>Mattina</strong>
+            <p>Controlla Dashboard, scadenze e prodotti sotto soglia.</p>
+          </div>
+
+          <div>
+            <strong>Durante il servizio</strong>
+            <p>Usa Vendita rapida o registra gli sprechi quando succedono.</p>
+          </div>
+
+          <div>
+            <strong>Fine giornata</strong>
+            <p>Controlla Ordini consigliati, Storico movimenti e Backup dati.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-panel">
+        <h3>Installazione sul telefono</h3>
+
+        <div class="install-box">
+          <div>
+            <h4>iPhone</h4>
+            <ol>
+              <li>Apri il link da Safari.</li>
+              <li>Premi il pulsante Condividi.</li>
+              <li>Scegli “Aggiungi alla schermata Home”.</li>
+              <li>Apri l’app dall’icona creata.</li>
+            </ol>
+          </div>
+
+          <div>
+            <h4>Android</h4>
+            <ol>
+              <li>Apri il link da Chrome.</li>
+              <li>Premi i tre puntini in alto.</li>
+              <li>Scegli “Aggiungi a schermata Home” o “Installa app”.</li>
+              <li>Apri l’app dall’icona creata.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-panel">
+        <h3>Checklist iniziale</h3>
+        <p>Completa questi passaggi prima di usare l’app nel lavoro quotidiano.</p>
+
+        <div class="guide-checklist">
+          <label>
+            <input type="checkbox" data-guide-check="settings">
+            Ho compilato le Impostazioni del locale
+          </label>
+
+          <label>
+            <input type="checkbox" data-guide-check="merce">
+            Ho inserito almeno 10 prodotti in Merce
+          </label>
+
+          <label>
+            <input type="checkbox" data-guide-check="soglie">
+            Ho inserito le soglie minime dei prodotti principali
+          </label>
+
+          <label>
+            <input type="checkbox" data-guide-check="ricette">
+            Ho creato almeno 3 ricette o piatti del menù
+          </label>
+
+          <label>
+            <input type="checkbox" data-guide-check="backup">
+            Ho fatto il primo backup dati
+          </label>
+        </div>
+
+        <pre id="guide-output"></pre>
+      </div>
+    `;
+
+    contenitore.appendChild(section);
+
+    collegaChecklistGuida();
+  }
+
+  function collegaChecklistGuida() {
+    var checks = document.querySelectorAll("[data-guide-check]");
+    var output = document.getElementById("guide-output");
+    var dati = leggiChecklistGuida();
+
+    checks.forEach(function (check) {
+      var key = check.getAttribute("data-guide-check");
+
+      check.checked = !!dati[key];
+
+      check.addEventListener("change", function () {
+        dati[key] = check.checked;
+        salvaChecklistGuida(dati);
+        aggiornaOutputGuida();
+      });
+    });
+
+    function aggiornaOutputGuida() {
+      var totale = checks.length;
+      var completati = 0;
+
+      checks.forEach(function (check) {
+        if (check.checked) completati++;
+      });
+
+      if (output) {
+        output.textContent =
+          "Checklist completata: " + completati + " su " + totale + ".";
+      }
+    }
+
+    aggiornaOutputGuida();
+  }
+
+  creaNavGuida();
+  creaSezioneGuida();
+});
