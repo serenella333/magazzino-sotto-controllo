@@ -2452,3 +2452,68 @@ document.addEventListener("DOMContentLoaded", function () {
 
   renderMovimenti();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function creaBoxIngredientiMancanti() {
+    var reportSection = document.getElementById("section-report");
+    if (!reportSection) return null;
+
+    var box = document.getElementById("missing-ingredients-box");
+    if (box) return box;
+
+    box = document.createElement("div");
+    box.id = "missing-ingredients-box";
+    box.className = "report-warning";
+    box.style.display = "none";
+
+    reportSection.appendChild(box);
+
+    return box;
+  }
+
+  function aggiornaIngredientiMancanti() {
+    var output = document.getElementById("report-output");
+    var box = creaBoxIngredientiMancanti();
+
+    if (!output || !box) return;
+
+    var testo = output.textContent || "";
+
+    if (!testo.includes("Ingrediente non trovato in magazzino")) {
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    var righe = testo.split("\n").filter(function (riga) {
+      return riga.includes("Ingrediente non trovato in magazzino");
+    });
+
+    var ingredienti = righe.map(function (riga) {
+      return riga.replace("Ingrediente non trovato in magazzino:", "").trim();
+    });
+
+    box.style.display = "block";
+    box.innerHTML =
+      "<strong>Ingredienti mancanti in magazzino</strong><br><br>" +
+      ingredienti.map(function (nome) {
+        return "• " + nome;
+      }).join("<br>") +
+      "<br><br>Aggiungili nella sezione Merce per far scalare correttamente le prossime vendite.";
+  }
+
+  var quickSaleBtn = document.getElementById("quick-sale-btn");
+  if (quickSaleBtn) {
+    quickSaleBtn.addEventListener("click", function () {
+      setTimeout(aggiornaIngredientiMancanti, 800);
+    });
+  }
+
+  var processBtn = document.getElementById("process-report-btn");
+  if (processBtn) {
+    processBtn.addEventListener("click", function () {
+      setTimeout(aggiornaIngredientiMancanti, 1200);
+    });
+  }
+
+  setTimeout(aggiornaIngredientiMancanti, 1000);
+});
