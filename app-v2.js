@@ -5425,3 +5425,28 @@ document.addEventListener("submit", function (event) {
       }
     });
 }, true);
+document.addEventListener("DOMContentLoaded", function () {
+  function portaLicenzaInPrimoPiano() {
+    var overlay =
+      document.getElementById("online-license-lock-screen") ||
+      document.getElementById("license-lock-screen");
+
+    if (!overlay) return;
+
+    document.body.classList.add("license-locked");
+
+    if (overlay.parentNode !== document.body) {
+      document.body.appendChild(overlay);
+    }
+
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.zIndex = "999999999";
+    overlay.style.width = "100vw";
+    overlay.style.height = "100vh";
+  }
+
+  setTimeout(portaLicenzaInPrimoPiano, 200);
+  setTimeout(portaLicenzaInPrimoPiano, 800);
+  setTimeout(portaLicenzaInPrimoPiano, 1500);
+});
