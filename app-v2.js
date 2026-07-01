@@ -1755,3 +1755,256 @@ document.addEventListener("DOMContentLoaded", function () {
   aggiornaDatalistMerce();
   renderRicette();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var reportFile = document.getElementById("report-file");
+  var processBtn = document.getElementById("process-report-btn");
+  var output = document.getElementById("report-output");
+  var reportSection = document.getElementById("section-report");
+
+  function leggiMerceReport() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceReport(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function leggiRicetteReport() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_ricette")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function normalizza(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function numeroReport(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function arrotonda(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function analizzaCSV(testo) {
+    var righe = String(testo || "")
+      .split(/\r?\n/)
+      .map(function (riga) {
+        return riga.trim();
+      })
+      .filter(Boolean);
+
+    var vendite = [];
+
+    righe.forEach(function (riga, index) {
+      var separatore = ";";
+
+      if (riga.indexOf(";") !== -1) {
+        separatore = ";";
+      } else if (riga.indexOf(",") !== -1) {
+        separatore = ",";
+      } else if (riga.indexOf("\t") !== -1) {
+        separatore = "\t";
+      }
+
+      var parti = riga.split(separatore).map(function (parte) {
+        return parte.trim();
+      });
+
+      var piatto = parti[0];
+      var quantita = parti[1] || "1";
+
+      var primaRiga = index === 0;
+      var sembraIntestazione =
+        normalizza(piatto).includes("piatto") ||
+        normalizza(piatto).includes("prodotto") ||
+        normalizza(piatto).includes("nome");
+
+      if (primaRiga && sembraIntestazione) return;
+      if (!piatto) return;
+
+      vendite.push({
+        piatto: piatto,
+        quantita: numeroReport(quantita) || 1
+      });
+    });
+
+    return vendite;
+  }
+
+  function elaboraVendite(vendite) {
+    var merce = leggiMerceReport();
+    var ricette = leggiRicetteReport();
+
+    var log = [];
+    var problemi = [];
+
+    if (vendite.length === 0) {
+      return "Nessuna vendita trovata nel file.";
+    }
+
+    log.push("REPORT VENDITE ELABORATO");
+    log.push("");
+    log.push("Vendite lette: " + vendite.length);
+    log.push("");
+
+    vendite.forEach(function (vendita) {
+      var ricetta = ricette.find(function (r) {
+        return normalizza(r.nome) === normalizza(vendita.piatto);
+      });
+
+      if (!ricetta) {
+        problemi.push("Ricetta non trovata: " + vendita.piatto);
+        return;
+      }
+
+      log.push("Piatto venduto: " + ricetta.nome + " x " + vendita.quantita);
+
+      (ricetta.ingredienti || []).forEach(function (ingrediente) {
+        var prodotto = merce.find(function (m) {
+          return normalizza(m.nome) === normalizza(ingrediente.nome);
+        });
+
+        if (!prodotto) {
+          problemi.push(
+            "Ingrediente non trovato in magazzino: " +
+              ingrediente.nome +
+              " nella ricetta " +
+              ricetta.nome
+          );
+          return;
+        }
+
+        var consumo = numeroReport(ingrediente.quantita) * vendita.quantita;
+        var giacenzaAttuale = numeroReport(prodotto.quantita);
+        var nuovaGiacenza = giacenzaAttuale - consumo;
+
+        if (nuovaGiacenza < 0) {
+          nuovaGiacenza = 0;
+        }
+
+        prodotto.quantita = String(arrotonda(nuovaGiacenza));
+
+        log.push(
+          " - " +
+            prodotto.nome +
+            ": -" +
+            arrotonda(consumo) +
+            " " +
+            (prodotto.unita || ingrediente.unita || "") +
+            " | nuova giacenza: " +
+            prodotto.quantita +
+            " " +
+            (prodotto.unita || "")
+        );
+      });
+
+      log.push("");
+    });
+
+    salvaMerceReport(merce);
+
+    if (problemi.length > 0) {
+      log.push("ATTENZIONE");
+      problemi.forEach(function (p) {
+        log.push(" - " + p);
+      });
+      log.push("");
+    }
+
+    log.push("Magazzino aggiornato.");
+    log.push("Torna su Merce o Dashboard per vedere le quantità aggiornate.");
+
+    setTimeout(function () {
+      var merceBtn = document.getElementById("nav-merchandise");
+      if (merceBtn) merceBtn.click();
+
+      var dashboardBtn = document.getElementById("nav-dashboard");
+      if (dashboardBtn) {
+        setTimeout(function () {
+          dashboardBtn.click();
+        }, 400);
+      }
+    }, 500);
+
+    return log.join("\n");
+  }
+
+  function creaPulsanteEsempio() {
+    if (!reportSection || document.getElementById("load-sample-report-btn")) return;
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "load-sample-report-btn";
+    btn.className = "secondary-btn";
+    btn.textContent = "Carica esempio";
+
+    btn.addEventListener("click", function () {
+      var ricette = leggiRicetteReport();
+      var nomeRicetta = ricette.length > 0 ? ricette[0].nome : "Pizza margherita";
+      var esempio = nomeRicetta + ";10";
+
+      sessionStorage.setItem("report_vendite_esempio", esempio);
+
+      if (output) {
+        output.textContent =
+          "Esempio caricato:\n\n" +
+          esempio +
+          "\n\nOra premi il pulsante Elabora vendite.";
+      }
+    });
+
+    if (processBtn && processBtn.parentNode) {
+      processBtn.parentNode.insertBefore(btn, processBtn);
+    }
+  }
+
+  if (processBtn) {
+    processBtn.textContent = "Elabora vendite";
+
+    processBtn.addEventListener("click", function () {
+      if (reportFile && reportFile.files && reportFile.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function (event) {
+          var testo = event.target.result;
+          var vendite = analizzaCSV(testo);
+          var risultato = elaboraVendite(vendite);
+
+          if (output) output.textContent = risultato;
+        };
+
+        reader.readAsText(reportFile.files[0]);
+        return;
+      }
+
+      var esempio = sessionStorage.getItem("report_vendite_esempio");
+
+      if (esempio) {
+        var venditeEsempio = analizzaCSV(esempio);
+        var risultatoEsempio = elaboraVendite(venditeEsempio);
+
+        if (output) output.textContent = risultatoEsempio;
+        return;
+      }
+
+      if (output) {
+        output.textContent =
+          "Nessun file selezionato.\n\nFormato accettato:\npiatto;quantita\n\nEsempio:\nPizza margherita;10";
+      }
+    });
+  }
+
+  creaPulsanteEsempio();
+});
