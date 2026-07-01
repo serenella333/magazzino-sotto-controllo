@@ -3639,3 +3639,140 @@ document.addEventListener("submit", function (event) {
     }, 300);
   }
 }, true);
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiSprechiAnalisi() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_sprechi")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function creaPannelloAnalisiSprechi() {
+    var dashboard = document.getElementById("section-dashboard");
+    if (!dashboard) return;
+
+    var panel = document.getElementById("waste-analysis-panel");
+    if (panel) return;
+
+    panel = document.createElement("div");
+    panel.id = "waste-analysis-panel";
+    panel.className = "panel waste-analysis-panel";
+
+    panel.innerHTML = `
+      <h3>Analisi sprechi</h3>
+      <p>Controlla cosa viene buttato più spesso e dove puoi recuperare margine.</p>
+      <div id="waste-analysis-content"></div>
+    `;
+
+    dashboard.appendChild(panel);
+  }
+
+  function renderAnalisiSprechi() {
+    creaPannelloAnalisiSprechi();
+
+    var contenitore = document.getElementById("waste-analysis-content");
+    if (!contenitore) return;
+
+    var sprechi = leggiSprechiAnalisi();
+
+    if (sprechi.length === 0) {
+      contenitore.innerHTML = `
+        <div class="empty-state">
+          <strong>Nessuno spreco registrato</strong><br>
+          Quando registri sprechi, qui comparirà l’analisi.
+        </div>
+      `;
+      return;
+    }
+
+    var oggi = new Date();
+    var setteGiorniFa = new Date();
+    setteGiorniFa.setDate(oggi.getDate() - 7);
+
+    var sprechiUltimi7 = sprechi.filter(function (item) {
+      return new Date(item.data) >= setteGiorniFa;
+    });
+
+    var gruppi = {};
+
+    sprechi.forEach(function (item) {
+      var nome = item.prodotto || "Prodotto";
+      var quantita = Number(String(item.quantita || "0").replace(",", ".")) || 0;
+      var unita = item.unita || "";
+
+      if (!gruppi[nome]) {
+        gruppi[nome] = {
+          prodotto: nome,
+          quantita: 0,
+          unita: unita,
+          volte: 0
+        };
+      }
+
+      gruppi[nome].quantita += quantita;
+      gruppi[nome].volte += 1;
+
+      if (!gruppi[nome].unita && unita) {
+        gruppi[nome].unita = unita;
+      }
+    });
+
+    var topSprechi = Object.values(gruppi)
+      .sort(function (a, b) {
+        return b.volte - a.volte || b.quantita - a.quantita;
+      })
+      .slice(0, 3);
+
+    var ultimo = sprechi[0];
+
+    contenitore.innerHTML = `
+      <div class="waste-analysis-grid">
+        <div class="waste-analysis-card">
+          <span>Sprechi totali</span>
+          <strong>${sprechi.length}</strong>
+        </div>
+
+        <div class="waste-analysis-card">
+          <span>Ultimi 7 giorni</span>
+          <strong>${sprechiUltimi7.length}</strong>
+        </div>
+
+        <div class="waste-analysis-card">
+          <span>Ultimo spreco</span>
+          <strong>${ultimo.prodotto || "Prodotto"}</strong>
+          <small>${ultimo.quantita || "0"} ${ultimo.unita || ""} — ${ultimo.motivo || "Spreco"}</small>
+        </div>
+      </div>
+
+      <div class="top-waste-box">
+        <h4>Prodotti più sprecati</h4>
+        ${
+          topSprechi.length
+            ? topSprechi.map(function (item) {
+                return `
+                  <div class="top-waste-row">
+                    <div>
+                      <strong>${item.prodotto}</strong>
+                      <small>${item.volte} registrazioni</small>
+                    </div>
+                    <span>${Math.round(item.quantita * 1000) / 1000} ${item.unita || ""}</span>
+                  </div>
+                `;
+              }).join("")
+            : "<p>Nessun dato disponibile.</p>"
+        }
+      </div>
+    `;
+  }
+
+  var dashboardBtn = document.getElementById("nav-dashboard");
+
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener("click", function () {
+      setTimeout(renderAnalisiSprechi, 300);
+    });
+  }
+
+  setTimeout(renderAnalisiSprechi, 800);
+});
