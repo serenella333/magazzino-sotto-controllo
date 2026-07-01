@@ -2668,3 +2668,151 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(mostraIngredientiMancantiCheck, 1000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var invoiceForm = document.getElementById("invoice-form");
+  var invoiceOutput = document.getElementById("invoice-output");
+
+  function leggiMerceFattura() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceFattura(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function leggiMovimentiFattura() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_movimenti")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMovimentiFattura(lista) {
+    localStorage.setItem("magazzino_movimenti", JSON.stringify(lista));
+  }
+
+  function normalizzaFattura(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function numeroFattura(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function arrotondaFattura(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function registraMovimentoFattura(titolo, dettaglio) {
+    var movimenti = leggiMovimentiFattura();
+
+    movimenti.unshift({
+      data: new Date().toISOString(),
+      tipo: "Fattura",
+      titolo: titolo,
+      dettaglio: dettaglio
+    });
+
+    if (movimenti.length > 50) {
+      movimenti = movimenti.slice(0, 50);
+    }
+
+    salvaMovimentiFattura(movimenti);
+  }
+
+  if (invoiceForm) {
+    invoiceForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      var nome = document.getElementById("invoice-product").value.trim();
+      var qty = numeroFattura(document.getElementById("invoice-qty").value);
+      var unit = document.getElementById("invoice-unit").value.trim();
+      var supplier = document.getElementById("invoice-supplier").value.trim();
+      var expiry = document.getElementById("invoice-expiry").value;
+      var threshold = document.getElementById("invoice-threshold").value;
+      var position = document.getElementById("invoice-position").value.trim();
+
+      if (!nome || qty <= 0) {
+        if (invoiceOutput) {
+          invoiceOutput.textContent = "Inserisci un prodotto e una quantità valida.";
+        }
+        return;
+      }
+
+      var merce = leggiMerceFattura();
+
+      var prodotto = merce.find(function (item) {
+        return normalizzaFattura(item.nome) === normalizzaFattura(nome);
+      });
+
+      var messaggio = "";
+
+      if (prodotto) {
+        var vecchiaQuantita = numeroFattura(prodotto.quantita);
+        var nuovaQuantita = arrotondaFattura(vecchiaQuantita + qty);
+
+        prodotto.quantita = String(nuovaQuantita);
+
+        if (unit) prodotto.unita = unit;
+        if (supplier) prodotto.fornitore = supplier;
+        if (expiry) prodotto.scadenza = expiry;
+        if (threshold) prodotto.soglia = threshold;
+        if (position) prodotto.posizione = position;
+
+        messaggio =
+          "FATTURA REGISTRATA\n\n" +
+          "Prodotto aggiornato: " + prodotto.nome + "\n" +
+          "Quantità precedente: " + vecchiaQuantita + " " + (prodotto.unita || "") + "\n" +
+          "Quantità arrivata: +" + qty + " " + (prodotto.unita || unit || "") + "\n" +
+          "Nuova quantità: " + nuovaQuantita + " " + (prodotto.unita || unit || "") + "\n\n" +
+          "Magazzino aggiornato.";
+      } else {
+        merce.push({
+          nome: nome,
+          quantita: String(qty),
+          unita: unit,
+          scadenza: expiry,
+          soglia: threshold || "0",
+          fornitore: supplier,
+          posizione: position
+        });
+
+        messaggio =
+          "FATTURA REGISTRATA\n\n" +
+          "Nuovo prodotto creato: " + nome + "\n" +
+          "Quantità iniziale: " + qty + " " + unit + "\n" +
+          "Fornitore: " + (supplier || "Non indicato") + "\n" +
+          "Posizione: " + (position || "Non indicata") + "\n\n" +
+          "Magazzino aggiornato.";
+      }
+
+      salvaMerceFattura(merce);
+
+      registraMovimentoFattura(
+        nome + " +" + qty + " " + unit,
+        supplier ? "Fornitore: " + supplier : "Fornitore non indicato"
+      );
+
+      if (invoiceOutput) {
+        invoiceOutput.textContent = messaggio;
+      }
+
+      invoiceForm.reset();
+
+      setTimeout(function () {
+        var merceBtn = document.getElementById("nav-merchandise");
+        if (merceBtn) merceBtn.click();
+      }, 600);
+    }, true);
+  }
+});
