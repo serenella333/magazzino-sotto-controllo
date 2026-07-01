@@ -2517,3 +2517,154 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(aggiornaIngredientiMancanti, 1000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function normalizzaCheck(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function leggiMerceCheck() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function leggiRicetteCheck() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_ricette")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function creaBoxMancantiCheck() {
+    var reportSection = document.getElementById("section-report");
+    if (!reportSection) return null;
+
+    var box = document.getElementById("missing-ingredients-box");
+    if (box) return box;
+
+    box = document.createElement("div");
+    box.id = "missing-ingredients-box";
+    box.className = "report-warning";
+    box.style.display = "none";
+
+    reportSection.appendChild(box);
+    return box;
+  }
+
+  function trovaIngredientiMancantiRicetta() {
+    var select = document.getElementById("quick-sale-recipe");
+    if (!select || !select.value) return [];
+
+    var ricette = leggiRicetteCheck();
+    var merce = leggiMerceCheck();
+
+    var ricetta = ricette.find(function (r) {
+      return normalizzaCheck(r.nome) === normalizzaCheck(select.value);
+    });
+
+    if (!ricetta) return [];
+
+    var mancanti = [];
+
+    (ricetta.ingredienti || []).forEach(function (ingrediente) {
+      var esiste = merce.some(function (item) {
+        return normalizzaCheck(item.nome) === normalizzaCheck(ingrediente.nome);
+      });
+
+      if (!esiste) {
+        mancanti.push({
+          nome: ingrediente.nome,
+          unita: ingrediente.unita || ""
+        });
+      }
+    });
+
+    return mancanti;
+  }
+
+  function mostraIngredientiMancantiCheck() {
+    var box = creaBoxMancantiCheck();
+    if (!box) return;
+
+    var mancanti = trovaIngredientiMancantiRicetta();
+
+    if (mancanti.length === 0) {
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    box.style.display = "block";
+    box.innerHTML =
+      "<strong>Ingredienti mancanti in magazzino</strong><br><br>" +
+      mancanti.map(function (item) {
+        return "• " + item.nome;
+      }).join("<br>") +
+      "<br><br>Aggiungili nella sezione Merce per far scalare correttamente le prossime vendite." +
+      "<br><br><button id='create-missing-from-recipe-btn' type='button'>Crea ingredienti mancanti</button>";
+
+    var btn = document.getElementById("create-missing-from-recipe-btn");
+
+    if (btn) {
+      btn.addEventListener("click", function () {
+        var merce = leggiMerceCheck();
+
+        mancanti.forEach(function (ingrediente) {
+          var esiste = merce.some(function (item) {
+            return normalizzaCheck(item.nome) === normalizzaCheck(ingrediente.nome);
+          });
+
+          if (!esiste) {
+            merce.push({
+              nome: ingrediente.nome,
+              quantita: "0",
+              unita: ingrediente.unita || "",
+              scadenza: "",
+              soglia: "0",
+              fornitore: "",
+              posizione: ""
+            });
+          }
+        });
+
+        localStorage.setItem("magazzino_merce", JSON.stringify(merce));
+
+        alert("Ingredienti mancanti creati in Merce.");
+
+        var merceBtn = document.getElementById("nav-merchandise");
+        if (merceBtn) merceBtn.click();
+      });
+    }
+  }
+
+  var select = document.getElementById("quick-sale-recipe");
+  if (select) {
+    select.addEventListener("change", mostraIngredientiMancantiCheck);
+    select.addEventListener("click", function () {
+      setTimeout(mostraIngredientiMancantiCheck, 300);
+    });
+  }
+
+  var quickSaleBtn = document.getElementById("quick-sale-btn");
+  if (quickSaleBtn) {
+    quickSaleBtn.addEventListener("click", function () {
+      setTimeout(mostraIngredientiMancantiCheck, 500);
+      setTimeout(mostraIngredientiMancantiCheck, 1200);
+    });
+  }
+
+  var reportBtn = document.getElementById("nav-report");
+  if (reportBtn) {
+    reportBtn.addEventListener("click", function () {
+      setTimeout(mostraIngredientiMancantiCheck, 500);
+    });
+  }
+
+  setTimeout(mostraIngredientiMancantiCheck, 1000);
+});
