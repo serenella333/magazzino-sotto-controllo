@@ -982,3 +982,24 @@ footer {
   background: #ffd4d4;
   color: #7d1f1f;
 }
+.edit-btn {
+  background: #e5f7f5;
+  color: var(--primary-dark);
+  box-shadow: none;
+}
+
+.edit-btn:hover {
+  background: #d2efed;
+  color: var(--primary-dark);
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.card-actions button {
+  width: auto;
+  flex: 1;
+}
