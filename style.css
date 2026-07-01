@@ -1395,3 +1395,51 @@ footer {
   padding: 14px;
   font-weight: 800;
 }
+.backup-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.backup-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.backup-actions button {
+  flex: 1;
+}
+
+.backup-upload {
+  display: grid;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+#backup-output {
+  white-space: pre-wrap;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  max-height: 240px;
+  overflow: auto;
+}
+
+@media (max-width: 640px) {
+  .backup-actions {
+    flex-direction: column;
+  }
+}
