@@ -3518,3 +3518,124 @@ document.addEventListener("DOMContentLoaded", function () {
   aggiornaDatalistSprechi();
   renderSprechi();
 });
+document.addEventListener("submit", function (event) {
+  if (!event.target || event.target.id !== "waste-form") return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  function leggiLista(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaLista(key, lista) {
+    localStorage.setItem(key, JSON.stringify(lista));
+  }
+
+  function normalizza(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function numero(valore) {
+    return Number(String(valore || "0").replace(",", ".")) || 0;
+  }
+
+  function arrotonda(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  var productInput = document.getElementById("waste-product");
+  var qtyInput = document.getElementById("waste-qty");
+  var reasonInput = document.getElementById("waste-reason");
+  var noteInput = document.getElementById("waste-note");
+
+  var prodottoNome = productInput ? productInput.value.trim() : "";
+  var quantitaSpreco = qtyInput ? numero(qtyInput.value) : 0;
+  var motivo = reasonInput ? reasonInput.value : "Spreco";
+  var nota = noteInput ? noteInput.value.trim() : "";
+
+  if (!prodottoNome || quantitaSpreco <= 0) {
+    alert("Inserisci prodotto e quantità valida.");
+    return;
+  }
+
+  var merce = leggiLista("magazzino_merce");
+
+  var prodotto = merce.find(function (item) {
+    return normalizza(item.nome) === normalizza(prodottoNome);
+  });
+
+  if (!prodotto) {
+    alert("Prodotto non trovato in Merce. Controlla che il nome sia identico.");
+    return;
+  }
+
+  var quantitaPrima = numero(prodotto.quantita);
+  var quantitaDopo = arrotonda(quantitaPrima - quantitaSpreco);
+
+  if (quantitaDopo < 0) {
+    quantitaDopo = 0;
+  }
+
+  prodotto.quantita = String(quantitaDopo);
+
+  salvaLista("magazzino_merce", merce);
+
+  var sprechi = leggiLista("magazzino_sprechi");
+
+  sprechi.unshift({
+    data: new Date().toISOString(),
+    prodotto: prodotto.nome,
+    quantita: String(quantitaSpreco),
+    unita: prodotto.unita || "",
+    motivo: motivo,
+    nota: nota,
+    quantitaPrima: String(quantitaPrima),
+    quantitaDopo: String(quantitaDopo)
+  });
+
+  if (sprechi.length > 100) {
+    sprechi = sprechi.slice(0, 100);
+  }
+
+  salvaLista("magazzino_sprechi", sprechi);
+
+  var movimenti = leggiLista("magazzino_movimenti");
+
+  movimenti.unshift({
+    data: new Date().toISOString(),
+    tipo: "Spreco",
+    titolo: prodotto.nome + " -" + quantitaSpreco + " " + (prodotto.unita || ""),
+    dettaglio: "Da " + quantitaPrima + " a " + quantitaDopo + " — Motivo: " + motivo
+  });
+
+  if (movimenti.length > 50) {
+    movimenti = movimenti.slice(0, 50);
+  }
+
+  salvaLista("magazzino_movimenti", movimenti);
+
+  event.target.reset();
+
+  alert(
+    "Spreco registrato.\n\n" +
+    prodotto.nome + "\n" +
+    "Prima: " + quantitaPrima + " " + (prodotto.unita || "") + "\n" +
+    "Spreco: -" + quantitaSpreco + " " + (prodotto.unita || "") + "\n" +
+    "Ora: " + quantitaDopo + " " + (prodotto.unita || "")
+  );
+
+  var merceBtn = document.getElementById("nav-merchandise");
+  if (merceBtn) {
+    setTimeout(function () {
+      merceBtn.click();
+    }, 300);
+  }
+}, true);
