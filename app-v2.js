@@ -2235,3 +2235,220 @@ document.addEventListener("DOMContentLoaded", function () {
   setTimeout(aggiornaMenuVenditaRapidaFix, 1500);
   setTimeout(aggiornaMenuVenditaRapidaFix, 3000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMovimenti() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_movimenti")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMovimenti(lista) {
+    localStorage.setItem("magazzino_movimenti", JSON.stringify(lista));
+  }
+
+  function registraMovimento(tipo, titolo, dettaglio) {
+    var movimenti = leggiMovimenti();
+
+    movimenti.unshift({
+      data: new Date().toISOString(),
+      tipo: tipo,
+      titolo: titolo,
+      dettaglio: dettaglio || ""
+    });
+
+    if (movimenti.length > 50) {
+      movimenti = movimenti.slice(0, 50);
+    }
+
+    salvaMovimenti(movimenti);
+    renderMovimenti();
+  }
+
+  function creaBoxMovimenti() {
+    var dashboard = document.getElementById("section-dashboard");
+    if (!dashboard) return null;
+
+    var box = document.getElementById("movements-panel");
+    if (box) return box;
+
+    box = document.createElement("div");
+    box.id = "movements-panel";
+    box.className = "panel movements-panel";
+
+    var title = document.createElement("h3");
+    title.textContent = "Storico movimenti";
+
+    var list = document.createElement("div");
+    list.id = "movements-list";
+    list.className = "movements-list";
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.id = "clear-movements-btn";
+    clear.className = "secondary-btn";
+    clear.textContent = "Svuota storico";
+
+    clear.addEventListener("click", function () {
+      var conferma = confirm("Vuoi svuotare lo storico movimenti?");
+      if (!conferma) return;
+
+      localStorage.removeItem("magazzino_movimenti");
+      renderMovimenti();
+    });
+
+    box.appendChild(title);
+    box.appendChild(list);
+    box.appendChild(clear);
+
+    dashboard.appendChild(box);
+
+    return box;
+  }
+
+  function formattaData(dataIso) {
+    var data = new Date(dataIso);
+
+    return data.toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function renderMovimenti() {
+    creaBoxMovimenti();
+
+    var list = document.getElementById("movements-list");
+    if (!list) return;
+
+    var movimenti = leggiMovimenti();
+
+    list.innerHTML = "";
+
+    if (movimenti.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+
+      var strong = document.createElement("strong");
+      strong.textContent = "Nessun movimento registrato";
+
+      var text = document.createElement("div");
+      text.textContent = "Quando elabori vendite o sprechi, li vedrai qui.";
+
+      empty.appendChild(strong);
+      empty.appendChild(document.createElement("br"));
+      empty.appendChild(text);
+
+      list.appendChild(empty);
+      return;
+    }
+
+    movimenti.slice(0, 10).forEach(function (movimento) {
+      var item = document.createElement("div");
+      item.className = "movement-item";
+
+      var top = document.createElement("div");
+      top.className = "movement-top";
+
+      var badge = document.createElement("span");
+      badge.className = "movement-badge";
+      badge.textContent = movimento.tipo || "Movimento";
+
+      var date = document.createElement("small");
+      date.textContent = formattaData(movimento.data);
+
+      top.appendChild(badge);
+      top.appendChild(date);
+
+      var title = document.createElement("strong");
+      title.textContent = movimento.titolo || "";
+
+      var detail = document.createElement("p");
+      detail.textContent = movimento.dettaglio || "";
+
+      item.appendChild(top);
+      item.appendChild(title);
+
+      if (movimento.dettaglio) {
+        item.appendChild(detail);
+      }
+
+      list.appendChild(item);
+    });
+  }
+
+  var quickSaleBtn = document.getElementById("quick-sale-btn");
+
+  if (quickSaleBtn) {
+    quickSaleBtn.addEventListener("click", function () {
+      setTimeout(function () {
+        var select = document.getElementById("quick-sale-recipe");
+        var qty = document.getElementById("quick-sale-qty");
+        var output = document.getElementById("report-output");
+
+        if (!select || !qty || !output) return;
+        if (!select.value) return;
+        if (!output.textContent.includes("Magazzino aggiornato")) return;
+
+        registraMovimento(
+          "Vendita",
+          select.value + " x " + qty.value,
+          "Ingredienti scalati automaticamente dal magazzino."
+        );
+      }, 600);
+    });
+  }
+
+  var processReportBtn = document.getElementById("process-report-btn");
+
+  if (processReportBtn) {
+    processReportBtn.addEventListener("click", function () {
+      setTimeout(function () {
+        var output = document.getElementById("report-output");
+        if (!output) return;
+        if (!output.textContent.includes("Magazzino aggiornato")) return;
+
+        registraMovimento(
+          "Report vendite",
+          "Report vendite elaborato",
+          "Le quantità degli ingredienti sono state aggiornate."
+        );
+      }, 1000);
+    });
+  }
+
+  var wasteForm = document.getElementById("waste-form");
+
+  if (wasteForm) {
+    wasteForm.addEventListener("submit", function () {
+      setTimeout(function () {
+        var product = document.getElementById("waste-product");
+        var qty = document.getElementById("waste-qty");
+        var reason = document.getElementById("waste-reason");
+
+        registraMovimento(
+          "Spreco",
+          product && product.value ? product.value : "Spreco registrato",
+          "Quantità: " +
+            (qty && qty.value ? qty.value : "0") +
+            ". Motivo: " +
+            (reason && reason.value ? reason.value : "non indicato") +
+            "."
+        );
+      }, 300);
+    });
+  }
+
+  var dashboardBtn = document.getElementById("nav-dashboard");
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener("click", function () {
+      setTimeout(renderMovimenti, 200);
+    });
+  }
+
+  renderMovimenti();
+});
