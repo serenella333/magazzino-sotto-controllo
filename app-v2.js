@@ -193,3 +193,89 @@ document.addEventListener("DOMContentLoaded", function () {
 
   mostra("dashboard");
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function vaiAllaSezione(idSezione, idBottone) {
+    var sezione = document.getElementById(idSezione);
+    if (sezione) {
+      sezione.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+
+    document.querySelectorAll("nav button").forEach(function (btn) {
+      btn.classList.remove("active");
+    });
+
+    var bottone = document.getElementById(idBottone);
+    if (bottone) {
+      bottone.classList.add("active");
+    }
+  }
+
+  var dashboard = document.getElementById("nav-dashboard");
+  var merce = document.getElementById("nav-merchandise");
+  var menu = document.getElementById("nav-menu");
+  var report = document.getElementById("nav-report");
+  var invoices = document.getElementById("nav-invoices");
+  var waste = document.getElementById("nav-waste");
+  var orders = document.getElementById("nav-orders");
+
+  if (dashboard) {
+    dashboard.addEventListener("click", function () {
+      vaiAllaSezione("section-dashboard", "nav-dashboard");
+    });
+  }
+
+  if (merce) {
+    merce.addEventListener("click", function () {
+      vaiAllaSezione("section-merchandise", "nav-merchandise");
+    });
+  }
+
+  if (menu) {
+    menu.addEventListener("click", function () {
+      vaiAllaSezione("section-menu", "nav-menu");
+    });
+  }
+
+  if (report) {
+    report.addEventListener("click", function () {
+      vaiAllaSezione("section-report", "nav-report");
+    });
+  }
+
+  if (invoices) {
+    invoices.addEventListener("click", function () {
+      vaiAllaSezione("section-invoices", "nav-invoices");
+    });
+  }
+
+  if (waste) {
+    waste.addEventListener("click", function () {
+      vaiAllaSezione("section-waste", "nav-waste");
+    });
+  }
+
+  if (orders) {
+    orders.addEventListener("click", function () {
+      vaiAllaSezione("section-orders", "nav-orders");
+    });
+  }
+
+  window.showSection = function (nome) {
+    var mappa = {
+      dashboard: ["section-dashboard", "nav-dashboard"],
+      merchandise: ["section-merchandise", "nav-merchandise"],
+      menu: ["section-menu", "nav-menu"],
+      report: ["section-report", "nav-report"],
+      invoices: ["section-invoices", "nav-invoices"],
+      waste: ["section-waste", "nav-waste"],
+      orders: ["section-orders", "nav-orders"]
+    };
+
+    if (mappa[nome]) {
+      vaiAllaSezione(mappa[nome][0], mappa[nome][1]);
+    }
+  };
+});
