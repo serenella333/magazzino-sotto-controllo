@@ -1177,3 +1177,20 @@ footer {
     flex-direction: column;
   }
 }
+#report-output {
+  white-space: pre-wrap;
+  background: #f8fdfd;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 20px;
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  overflow-x: auto;
+}
+
+#load-sample-report-btn {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
