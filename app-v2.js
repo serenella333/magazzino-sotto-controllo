@@ -3294,3 +3294,227 @@ document.addEventListener("DOMContentLoaded", function () {
 
   creaPannelloBackup();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var wasteForm = document.getElementById("waste-form");
+  var wasteList = document.getElementById("waste-list");
+  var wasteNames = document.getElementById("waste-merce-names");
+
+  function leggiMerceSprechi() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceSprechi(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function leggiSprechi() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_sprechi")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaSprechi(lista) {
+    localStorage.setItem("magazzino_sprechi", JSON.stringify(lista));
+  }
+
+  function leggiMovimentiSprechi() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_movimenti")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMovimentiSprechi(lista) {
+    localStorage.setItem("magazzino_movimenti", JSON.stringify(lista));
+  }
+
+  function normalizzaSprechi(testo) {
+    return String(testo || "").trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function numeroSprechi(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function arrotondaSprechi(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function aggiornaDatalistSprechi() {
+    if (!wasteNames) return;
+
+    var merce = leggiMerceSprechi();
+    wasteNames.innerHTML = "";
+
+    merce.forEach(function (item) {
+      if (!item.nome) return;
+
+      var option = document.createElement("option");
+      option.value = item.nome;
+      wasteNames.appendChild(option);
+    });
+  }
+
+  function registraMovimentoSpreco(prodotto, quantita, motivo) {
+    var movimenti = leggiMovimentiSprechi();
+
+    movimenti.unshift({
+      data: new Date().toISOString(),
+      tipo: "Spreco",
+      titolo: prodotto + " -" + quantita,
+      dettaglio: "Motivo: " + motivo
+    });
+
+    if (movimenti.length > 50) {
+      movimenti = movimenti.slice(0, 50);
+    }
+
+    salvaMovimentiSprechi(movimenti);
+  }
+
+  function renderSprechi() {
+    if (!wasteList) return;
+
+    var sprechi = leggiSprechi();
+    wasteList.innerHTML = "";
+
+    if (sprechi.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "<strong>Nessuno spreco registrato</strong><br>Quando registri uno spreco, lo vedrai qui.";
+      wasteList.appendChild(empty);
+      return;
+    }
+
+    sprechi.slice(0, 20).forEach(function (spreco) {
+      var card = document.createElement("div");
+      card.className = "waste-card";
+
+      var header = document.createElement("div");
+      header.className = "waste-card-header";
+
+      var left = document.createElement("div");
+
+      var title = document.createElement("h3");
+      title.textContent = spreco.prodotto || "Prodotto";
+
+      var date = document.createElement("small");
+      date.textContent = new Date(spreco.data).toLocaleString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      left.appendChild(title);
+      left.appendChild(date);
+
+      var badge = document.createElement("span");
+      badge.className = "waste-badge";
+      badge.textContent = spreco.motivo || "Spreco";
+
+      header.appendChild(left);
+      header.appendChild(badge);
+
+      var detail = document.createElement("div");
+      detail.className = "waste-detail";
+
+      var qta = document.createElement("div");
+      qta.innerHTML = "<span>Quantità</span><strong>" + (spreco.quantita || "0") + " " + (spreco.unita || "") + "</strong>";
+
+      var nota = document.createElement("div");
+      nota.innerHTML = "<span>Nota</span><strong>" + (spreco.nota || "Nessuna nota") + "</strong>";
+
+      detail.appendChild(qta);
+      detail.appendChild(nota);
+
+      card.appendChild(header);
+      card.appendChild(detail);
+
+      wasteList.appendChild(card);
+    });
+  }
+
+  if (wasteForm) {
+    wasteForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      var prodotto = document.getElementById("waste-product").value.trim();
+      var quantita = numeroSprechi(document.getElementById("waste-qty").value);
+      var motivo = document.getElementById("waste-reason").value;
+      var nota = document.getElementById("waste-note").value.trim();
+
+      if (!prodotto || quantita <= 0) {
+        alert("Inserisci prodotto e quantità valida.");
+        return;
+      }
+
+      var merce = leggiMerceSprechi();
+      var trovato = merce.find(function (item) {
+        return normalizzaSprechi(item.nome) === normalizzaSprechi(prodotto);
+      });
+
+      var unita = "";
+
+      if (trovato) {
+        var vecchiaQuantita = numeroSprechi(trovato.quantita);
+        var nuovaQuantita = vecchiaQuantita - quantita;
+
+        if (nuovaQuantita < 0) nuovaQuantita = 0;
+
+        trovato.quantita = String(arrotondaSprechi(nuovaQuantita));
+        unita = trovato.unita || "";
+
+        salvaMerceSprechi(merce);
+      }
+
+      var sprechi = leggiSprechi();
+
+      sprechi.unshift({
+        data: new Date().toISOString(),
+        prodotto: prodotto,
+        quantita: String(quantita),
+        unita: unita,
+        motivo: motivo,
+        nota: nota
+      });
+
+      if (sprechi.length > 100) {
+        sprechi = sprechi.slice(0, 100);
+      }
+
+      salvaSprechi(sprechi);
+      registraMovimentoSpreco(prodotto, quantita + " " + unita, motivo);
+
+      wasteForm.reset();
+      renderSprechi();
+
+      alert(
+        trovato
+          ? "Spreco registrato e merce scalata dal magazzino."
+          : "Spreco registrato. Attenzione: prodotto non trovato in Merce."
+      );
+    }, true);
+  }
+
+  var wasteBtn = document.getElementById("nav-waste");
+  if (wasteBtn) {
+    wasteBtn.addEventListener("click", function () {
+      aggiornaDatalistSprechi();
+      setTimeout(renderSprechi, 200);
+    });
+  }
+
+  aggiornaDatalistSprechi();
+  renderSprechi();
+});
