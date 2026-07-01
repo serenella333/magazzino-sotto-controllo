@@ -2816,3 +2816,315 @@ document.addEventListener("DOMContentLoaded", function () {
     }, true);
   }
 });
+document.addEventListener("DOMContentLoaded", function () {
+  var photoInput = document.getElementById("invoice-photo");
+  var ocrBtn = document.getElementById("ocr-invoice-btn");
+  var ocrText = document.getElementById("ocr-invoice-text");
+  var importBtn = document.getElementById("import-ocr-lines-btn");
+  var ocrOutput = document.getElementById("ocr-invoice-output");
+
+  function leggiMerceOCR() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMerceOCR(lista) {
+    localStorage.setItem("magazzino_merce", JSON.stringify(lista));
+  }
+
+  function leggiMovimentiOCR() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_movimenti")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvaMovimentiOCR(lista) {
+    localStorage.setItem("magazzino_movimenti", JSON.stringify(lista));
+  }
+
+  function normalizzaOCR(testo) {
+    return String(testo || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function numeroOCR(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function arrotondaOCR(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function pulisciUnitaOCR(unita) {
+    var u = String(unita || "").toLowerCase().trim();
+
+    if (u === "gr" || u === "grammi") return "g";
+    if (u === "lt" || u === "litri") return "l";
+    if (u === "pezzi" || u === "pcs") return "pz";
+    if (u === "conf" || u === "confezione") return "pz";
+
+    return u;
+  }
+
+  function registraMovimentoOCR(titolo, dettaglio) {
+    var movimenti = leggiMovimentiOCR();
+
+    movimenti.unshift({
+      data: new Date().toISOString(),
+      tipo: "Foto fattura",
+      titolo: titolo,
+      dettaglio: dettaglio || ""
+    });
+
+    if (movimenti.length > 50) {
+      movimenti = movimenti.slice(0, 50);
+    }
+
+    salvaMovimentiOCR(movimenti);
+  }
+
+  function provaParseRigaOCR(riga) {
+    var originale = String(riga || "").trim();
+
+    if (!originale) return null;
+
+    var lower = originale.toLowerCase();
+
+    var paroleDaSaltare = [
+      "totale",
+      "iva",
+      "imponibile",
+      "pagamento",
+      "fattura",
+      "documento",
+      "codice",
+      "prezzo",
+      "sconto",
+      "subtotale",
+      "partita iva",
+      "p.iva"
+    ];
+
+    var daSaltare = paroleDaSaltare.some(function (parola) {
+      return lower.includes(parola);
+    });
+
+    if (daSaltare) return null;
+
+    var unitaRegex = "(kg|g|gr|grammi|l|lt|litri|pz|pezzi|pcs|conf|confezione)";
+
+    var matchProdottoQuantitaUnita = originale.match(
+      new RegExp("^(.+?)\\s+(\\d+(?:[\\.,]\\d+)?)\\s*" + unitaRegex + "\\b", "i")
+    );
+
+    if (matchProdottoQuantitaUnita) {
+      return {
+        nome: matchProdottoQuantitaUnita[1].trim(),
+        quantita: numeroOCR(matchProdottoQuantitaUnita[2]),
+        unita: pulisciUnitaOCR(matchProdottoQuantitaUnita[3])
+      };
+    }
+
+    var matchProdottoUnitaQuantita = originale.match(
+      new RegExp("^(.+?)\\s+" + unitaRegex + "\\s+(\\d+(?:[\\.,]\\d+)?)\\b", "i")
+    );
+
+    if (matchProdottoUnitaQuantita) {
+      return {
+        nome: matchProdottoUnitaQuantita[1].trim(),
+        quantita: numeroOCR(matchProdottoUnitaQuantita[3]),
+        unita: pulisciUnitaOCR(matchProdottoUnitaQuantita[2])
+      };
+    }
+
+    return null;
+  }
+
+  function estraiProdottiDaTestoOCR(testo) {
+    var righe = String(testo || "")
+      .split(/\r?\n/)
+      .map(function (riga) {
+        return riga.trim();
+      })
+      .filter(Boolean);
+
+    var prodotti = [];
+
+    righe.forEach(function (riga) {
+      var prodotto = provaParseRigaOCR(riga);
+
+      if (!prodotto) return;
+      if (!prodotto.nome || prodotto.quantita <= 0) return;
+
+      prodotti.push(prodotto);
+    });
+
+    return prodotti;
+  }
+
+  function aggiornaMagazzinoDaOCR(prodotti) {
+    var merce = leggiMerceOCR();
+    var log = [];
+
+    if (prodotti.length === 0) {
+      return "Nessun prodotto riconosciuto.\n\nFormato che l’app capisce meglio:\nMozzarella 20 kg\nFarina kg 10\nPomodori 5 kg";
+    }
+
+    log.push("FOTO FATTURA ELABORATA");
+    log.push("");
+    log.push("Prodotti riconosciuti: " + prodotti.length);
+    log.push("");
+
+    prodotti.forEach(function (prodottoOCR) {
+      var esistente = merce.find(function (item) {
+        return normalizzaOCR(item.nome) === normalizzaOCR(prodottoOCR.nome);
+      });
+
+      if (esistente) {
+        var vecchia = numeroOCR(esistente.quantita);
+        var nuova = arrotondaOCR(vecchia + prodottoOCR.quantita);
+
+        esistente.quantita = String(nuova);
+
+        if (prodottoOCR.unita) {
+          esistente.unita = prodottoOCR.unita;
+        }
+
+        log.push(
+          "Aggiornato: " +
+            esistente.nome +
+            " | +" +
+            prodottoOCR.quantita +
+            " " +
+            prodottoOCR.unita +
+            " | nuova quantità: " +
+            nuova +
+            " " +
+            (esistente.unita || "")
+        );
+      } else {
+        merce.push({
+          nome: prodottoOCR.nome,
+          quantita: String(prodottoOCR.quantita),
+          unita: prodottoOCR.unita || "",
+          scadenza: "",
+          soglia: "0",
+          fornitore: "Da foto fattura",
+          posizione: ""
+        });
+
+        log.push(
+          "Creato: " +
+            prodottoOCR.nome +
+            " | quantità: " +
+            prodottoOCR.quantita +
+            " " +
+            prodottoOCR.unita
+        );
+      }
+    });
+
+    salvaMerceOCR(merce);
+
+    registraMovimentoOCR(
+      "Carico da foto fattura",
+      prodotti.length + " prodotti caricati o aggiornati in magazzino."
+    );
+
+    log.push("");
+    log.push("Magazzino aggiornato.");
+    log.push("Controlla Merce per completare scadenza, soglia e posizione.");
+
+    return log.join("\n");
+  }
+
+  if (ocrBtn) {
+    ocrBtn.addEventListener("click", function () {
+      if (!photoInput || !photoInput.files || !photoInput.files[0]) {
+        if (ocrOutput) {
+          ocrOutput.textContent = "Scatta o seleziona prima una foto della fattura.";
+        }
+        return;
+      }
+
+      if (typeof Tesseract === "undefined") {
+        if (ocrOutput) {
+          ocrOutput.textContent =
+            "OCR non caricato. Controlla di aver aggiunto lo script Tesseract in index.html prima di app-v2.js.";
+        }
+        return;
+      }
+
+      var file = photoInput.files[0];
+
+      if (ocrOutput) {
+        ocrOutput.textContent =
+          "Sto leggendo la foto...\n\nTieni la pagina aperta. Può richiedere qualche secondo.";
+      }
+
+      Tesseract.recognize(file, "ita+eng", {
+        logger: function (m) {
+          if (!ocrOutput) return;
+
+          if (m.status) {
+            var percentuale = m.progress
+              ? " " + Math.round(m.progress * 100) + "%"
+              : "";
+
+            ocrOutput.textContent = "Lettura foto: " + m.status + percentuale;
+          }
+        }
+      })
+        .then(function (result) {
+          var testo = result && result.data ? result.data.text : "";
+
+          if (ocrText) {
+            ocrText.value = testo.trim();
+          }
+
+          var prodotti = estraiProdottiDaTestoOCR(testo);
+
+          if (ocrOutput) {
+            ocrOutput.textContent =
+              "Testo letto dalla foto.\n\n" +
+              "Prodotti riconosciuti automaticamente: " +
+              prodotti.length +
+              "\n\nControlla il testo riconosciuto, correggilo se serve, poi premi Carica prodotti riconosciuti.";
+          }
+        })
+        .catch(function () {
+          if (ocrOutput) {
+            ocrOutput.textContent =
+              "Non sono riuscita a leggere la foto. Riprova con una foto più chiara, dritta e ben illuminata.";
+          }
+        });
+    });
+  }
+
+  if (importBtn) {
+    importBtn.addEventListener("click", function () {
+      var testo = ocrText ? ocrText.value : "";
+      var prodotti = estraiProdottiDaTestoOCR(testo);
+      var risultato = aggiornaMagazzinoDaOCR(prodotti);
+
+      if (ocrOutput) {
+        ocrOutput.textContent = risultato;
+      }
+
+      if (prodotti.length > 0) {
+        setTimeout(function () {
+          var merceBtn = document.getElementById("nav-merchandise");
+          if (merceBtn) merceBtn.click();
+        }, 800);
+      }
+    });
+  }
+});
