@@ -3128,3 +3128,169 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiJSONBackup(key, fallback) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function creaBackupData() {
+    return {
+      app: "Magazzino Sotto Controllo",
+      versione: "1.0",
+      creatoIl: new Date().toISOString(),
+      dati: {
+        merce: leggiJSONBackup("magazzino_merce", []),
+        ricette: leggiJSONBackup("magazzino_ricette", []),
+        sprechi: leggiJSONBackup("magazzino_sprechi", []),
+        movimenti: leggiJSONBackup("magazzino_movimenti", [])
+      }
+    };
+  }
+
+  function creaPannelloBackup() {
+    var dashboard = document.getElementById("section-dashboard");
+    if (!dashboard) return;
+
+    if (document.getElementById("backup-panel")) return;
+
+    var panel = document.createElement("div");
+    panel.id = "backup-panel";
+    panel.className = "panel backup-panel";
+
+    panel.innerHTML = `
+      <h3>Backup dati</h3>
+      <p>Salva una copia del magazzino, delle ricette e dei movimenti.</p>
+
+      <div class="backup-actions">
+        <button type="button" id="download-backup-btn">Scarica backup</button>
+        <button type="button" id="copy-backup-btn" class="secondary-btn">Copia backup</button>
+      </div>
+
+      <label class="backup-upload">
+        Ripristina backup
+        <input id="restore-backup-file" type="file" accept=".json,application/json">
+      </label>
+
+      <pre id="backup-output"></pre>
+    `;
+
+    dashboard.appendChild(panel);
+
+    collegaBackup();
+  }
+
+  function collegaBackup() {
+    var downloadBtn = document.getElementById("download-backup-btn");
+    var copyBtn = document.getElementById("copy-backup-btn");
+    var restoreInput = document.getElementById("restore-backup-file");
+    var output = document.getElementById("backup-output");
+
+    if (downloadBtn) {
+      downloadBtn.addEventListener("click", function () {
+        var backup = creaBackupData();
+        var testo = JSON.stringify(backup, null, 2);
+
+        var blob = new Blob([testo], {
+          type: "application/json"
+        });
+
+        var url = URL.createObjectURL(blob);
+
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "backup-magazzino-sotto-controllo.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+
+        if (output) {
+          output.textContent = "Backup creato. Salvalo nei File, su Drive o dove preferisci.";
+        }
+      });
+    }
+
+    if (copyBtn) {
+      copyBtn.addEventListener("click", function () {
+        var backup = creaBackupData();
+        var testo = JSON.stringify(backup, null, 2);
+
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(testo).then(function () {
+            if (output) {
+              output.textContent = "Backup copiato. Puoi incollarlo in Note, WhatsApp, Drive o email.";
+            }
+          }).catch(function () {
+            if (output) {
+              output.textContent = testo;
+            }
+          });
+        } else {
+          if (output) {
+            output.textContent = testo;
+          }
+        }
+      });
+    }
+
+    if (restoreInput) {
+      restoreInput.addEventListener("change", function () {
+        var file = restoreInput.files && restoreInput.files[0];
+
+        if (!file) return;
+
+        var conferma = confirm(
+          "Vuoi ripristinare questo backup? I dati attuali saranno sostituiti."
+        );
+
+        if (!conferma) {
+          restoreInput.value = "";
+          return;
+        }
+
+        var reader = new FileReader();
+
+        reader.onload = function (event) {
+          try {
+            var backup = JSON.parse(event.target.result);
+            var dati = backup.dati || {};
+
+            localStorage.setItem("magazzino_merce", JSON.stringify(dati.merce || []));
+            localStorage.setItem("magazzino_ricette", JSON.stringify(dati.ricette || []));
+            localStorage.setItem("magazzino_sprechi", JSON.stringify(dati.sprechi || []));
+            localStorage.setItem("magazzino_movimenti", JSON.stringify(dati.movimenti || []));
+
+            if (output) {
+              output.textContent = "Backup ripristinato correttamente. Ricarico l’app...";
+            }
+
+            setTimeout(function () {
+              location.reload();
+            }, 1000);
+          } catch (e) {
+            if (output) {
+              output.textContent = "Errore: il file selezionato non sembra un backup valido.";
+            }
+          }
+        };
+
+        reader.readAsText(file);
+      });
+    }
+  }
+
+  var dashboardBtn = document.getElementById("nav-dashboard");
+
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener("click", function () {
+      setTimeout(creaPannelloBackup, 300);
+    });
+  }
+
+  creaPannelloBackup();
+});
