@@ -3916,3 +3916,204 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(aggiornaBoxCopiaOrdini, 1200);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceOrdiniMobile() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numeroOrdiniMobile(valore) {
+    return Number(String(valore || "0").replace(",", ".")) || 0;
+  }
+
+  function arrotondaOrdiniMobile(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function creaTestoOrdineMobile() {
+    var merce = leggiMerceOrdiniMobile();
+
+    var prodotti = merce.filter(function (item) {
+      var quantita = numeroOrdiniMobile(item.quantita);
+      var soglia = numeroOrdiniMobile(item.soglia);
+      return soglia > 0 && quantita <= soglia;
+    });
+
+    if (prodotti.length === 0) {
+      return "Nessun ordine urgente. Le quantità sono sopra soglia.";
+    }
+
+    var gruppi = {};
+
+    prodotti.forEach(function (item) {
+      var fornitore = item.fornitore && item.fornitore.trim()
+        ? item.fornitore.trim()
+        : "Fornitore non indicato";
+
+      if (!gruppi[fornitore]) {
+        gruppi[fornitore] = [];
+      }
+
+      gruppi[fornitore].push(item);
+    });
+
+    var testo = "ORDINE CONSIGLIATO\n";
+    testo += "Magazzino Sotto Controllo\n";
+    testo += new Date().toLocaleDateString("it-IT") + "\n\n";
+
+    Object.keys(gruppi).forEach(function (fornitore) {
+      testo += "FORNITORE: " + fornitore + "\n";
+
+      gruppi[fornitore].forEach(function (item) {
+        var quantita = numeroOrdiniMobile(item.quantita);
+        var soglia = numeroOrdiniMobile(item.soglia);
+        var suggerito = arrotondaOrdiniMobile(Math.max(soglia * 2 - quantita, soglia));
+
+        testo += "- " + item.nome + ": ordinare circa " + suggerito + " " + (item.unita || "") + "\n";
+        testo += "  Giacenza attuale: " + quantita + " " + (item.unita || "") + " | Soglia: " + soglia + " " + (item.unita || "") + "\n";
+      });
+
+      testo += "\n";
+    });
+
+    return testo.trim();
+  }
+
+  function copiaTestoOrdineMobile(testo) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(testo);
+    }
+
+    return new Promise(function (resolve, reject) {
+      var area = document.createElement("textarea");
+      area.value = testo;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.top = "-9999px";
+      area.style.left = "-9999px";
+
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      area.setSelectionRange(0, area.value.length);
+
+      var ok = false;
+
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+
+      document.body.removeChild(area);
+
+      if (ok) {
+        resolve();
+      } else {
+        reject();
+      }
+    });
+  }
+
+  function creaPannelloCopiaMobile() {
+    var section = document.getElementById("section-orders");
+    if (!section) return;
+
+    var vecchio = document.getElementById("quick-copy-orders-panel");
+    if (vecchio) {
+      var areaVecchia = document.getElementById("quick-orders-text");
+      if (areaVecchia) areaVecchia.value = creaTestoOrdineMobile();
+      return;
+    }
+
+    var panel = document.createElement("div");
+    panel.id = "quick-copy-orders-panel";
+    panel.className = "quick-copy-orders-panel";
+
+    panel.innerHTML = `
+      <h3>Ordine pronto da inviare</h3>
+      <p>Copia o condividi subito la lista con il fornitore.</p>
+
+      <div class="quick-copy-actions">
+        <button type="button" id="quick-copy-orders-btn">Copia ordine</button>
+        <button type="button" id="quick-share-orders-btn" class="secondary-btn">Condividi</button>
+      </div>
+
+      <textarea id="quick-orders-text" rows="8" readonly></textarea>
+    `;
+
+    var titolo = section.querySelector("h2");
+
+    if (titolo && titolo.parentNode) {
+      titolo.insertAdjacentElement("afterend", panel);
+    } else {
+      section.prepend(panel);
+    }
+
+    var textarea = document.getElementById("quick-orders-text");
+    var copyBtn = document.getElementById("quick-copy-orders-btn");
+    var shareBtn = document.getElementById("quick-share-orders-btn");
+
+    if (textarea) {
+      textarea.value = creaTestoOrdineMobile();
+    }
+
+    if (copyBtn) {
+      copyBtn.addEventListener("click", function () {
+        var testo = creaTestoOrdineMobile();
+
+        if (textarea) {
+          textarea.value = testo;
+        }
+
+        copiaTestoOrdineMobile(testo)
+          .then(function () {
+            alert("Ordine copiato. Ora puoi incollarlo su WhatsApp o email.");
+          })
+          .catch(function () {
+            if (textarea) {
+              textarea.removeAttribute("readonly");
+              textarea.focus();
+              textarea.select();
+              textarea.setSelectionRange(0, textarea.value.length);
+            }
+
+            alert("Non riesco a copiarlo automaticamente. Tieni premuto sul testo qui sotto e fai Copia.");
+          });
+      });
+    }
+
+    if (shareBtn) {
+      shareBtn.addEventListener("click", function () {
+        var testo = creaTestoOrdineMobile();
+
+        if (textarea) {
+          textarea.value = testo;
+        }
+
+        if (navigator.share) {
+          navigator.share({
+            title: "Ordine consigliato",
+            text: testo
+          }).catch(function () {});
+        } else {
+          alert("Condivisione non disponibile. Usa Copia ordine.");
+        }
+      });
+    }
+  }
+
+  var ordersBtn = document.getElementById("nav-orders");
+
+  if (ordersBtn) {
+    ordersBtn.addEventListener("click", function () {
+      setTimeout(creaPannelloCopiaMobile, 300);
+      setTimeout(creaPannelloCopiaMobile, 900);
+    });
+  }
+
+  setTimeout(creaPannelloCopiaMobile, 1200);
+});
