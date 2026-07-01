@@ -210,6 +210,53 @@ qq<!DOCTYPE html>
             <input type="file" id="invoice-file" accept=".csv, .txt">
             <button id="process-invoice-btn">Carica fattura</button>
             <pre id="invoice-output"></pre>
+            <div class="invoice-box">
+  <h3>Carico rapido fattura</h3>
+  <p>Aggiungi merce arrivata da un fornitore e aggiorna subito il magazzino.</p>
+
+  <form id="invoice-form" class="app-form">
+    <label>
+      Prodotto
+      <input id="invoice-product" type="text" placeholder="Es. Mozzarella, farina, pomodori..." required>
+    </label>
+
+    <div class="form-grid">
+      <label>
+        Quantità arrivata
+        <input id="invoice-qty" type="number" step="0.001" placeholder="Es. 20" required>
+      </label>
+
+      <label>
+        Unità
+        <input id="invoice-unit" type="text" placeholder="kg, g, l, pz">
+      </label>
+    </div>
+
+    <label>
+      Fornitore
+      <input id="invoice-supplier" type="text" placeholder="Es. Caseificio, Metro, ortofrutta...">
+    </label>
+
+    <div class="form-grid">
+      <label>
+        Scadenza
+        <input id="invoice-expiry" type="date">
+      </label>
+
+      <label>
+        Soglia minima
+        <input id="invoice-threshold" type="number" step="0.001" placeholder="Es. 5">
+      </label>
+    </div>
+
+    <label>
+      Posizione
+      <input id="invoice-position" type="text" placeholder="Es. Frigo 1, freezer, scaffale secco...">
+    </label>
+
+    <button type="submit">Aggiorna magazzino</button>
+  </form>
+</div>
         </section>
 
         <section id="section-waste" class="hidden">
