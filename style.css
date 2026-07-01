@@ -2008,3 +2008,33 @@ body.license-locked {
     font-size: 30px;
   }
 }
+body.license-locked header,
+body.license-locked main,
+body.license-locked nav {
+  display: none !important;
+}
+
+body.license-locked {
+  overflow: hidden !important;
+}
+
+#online-license-lock-screen,
+#license-lock-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999999999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  background: linear-gradient(135deg, #e8f8f7, #ffffff) !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 22px !important;
+  overflow-y: auto !important;
+}
+
+#online-license-lock-screen .license-card,
+#license-lock-screen .license-card {
+  width: min(100%, 480px) !important;
+  margin: 0 auto !important;
+}
