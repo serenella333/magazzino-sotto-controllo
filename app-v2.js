@@ -1257,3 +1257,169 @@ document.addEventListener("DOMContentLoaded", function () {
   setTimeout(aggiornaDashboardIntelligente, 300);
   setTimeout(aggiornaDashboardIntelligente, 1200);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceOrdini() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numeroOrdini(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function creaOrdiniContainer() {
+    var section = document.getElementById("section-orders");
+    if (!section) return null;
+
+    var container = document.getElementById("order-list");
+
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "order-list";
+      container.className = "order-list";
+      section.appendChild(container);
+    }
+
+    return container;
+  }
+
+  function calcolaQuantitaDaOrdinare(item) {
+    var quantita = numeroOrdini(item.quantita);
+    var soglia = numeroOrdini(item.soglia);
+
+    if (soglia <= 0) return 0;
+
+    var obiettivo = soglia * 2;
+    var daOrdinare = obiettivo - quantita;
+
+    if (daOrdinare < 0) return 0;
+
+    return Math.ceil(daOrdinare * 100) / 100;
+  }
+
+  function aggiornaOrdiniConsigliati() {
+    var container = creaOrdiniContainer();
+    if (!container) return;
+
+    var merce = leggiMerceOrdini();
+
+    var prodottiDaOrdinare = merce.filter(function (item) {
+      var quantita = numeroOrdini(item.quantita);
+      var soglia = numeroOrdini(item.soglia);
+      return soglia > 0 && quantita <= soglia;
+    });
+
+    container.innerHTML = "";
+
+    if (prodottiDaOrdinare.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+
+      var titolo = document.createElement("strong");
+      titolo.textContent = "Nessun ordine urgente";
+
+      var testo = document.createElement("div");
+      testo.textContent = "Le quantità sono sopra soglia. Il magazzino è sotto controllo.";
+
+      empty.appendChild(titolo);
+      empty.appendChild(document.createElement("br"));
+      empty.appendChild(testo);
+
+      container.appendChild(empty);
+      return;
+    }
+
+    prodottiDaOrdinare.forEach(function (item) {
+      var quantita = numeroOrdini(item.quantita);
+      var soglia = numeroOrdini(item.soglia);
+      var daOrdinare = calcolaQuantitaDaOrdinare(item);
+
+      var card = document.createElement("div");
+      card.className = "order-card";
+
+      var titolo = document.createElement("h3");
+      titolo.textContent = item.nome || "Prodotto senza nome";
+
+      var fornitore = document.createElement("p");
+      fornitore.textContent = item.fornitore
+        ? "Fornitore: " + item.fornitore
+        : "Fornitore non indicato";
+
+      var dettaglio = document.createElement("div");
+      dettaglio.className = "order-detail";
+
+      var attuale = document.createElement("div");
+      attuale.innerHTML =
+        "<span>Giacenza attuale</span><strong>" +
+        quantita +
+        " " +
+        (item.unita || "") +
+        "</strong>";
+
+      var minima = document.createElement("div");
+      minima.innerHTML =
+        "<span>Soglia minima</span><strong>" +
+        soglia +
+        " " +
+        (item.unita || "") +
+        "</strong>";
+
+      var ordine = document.createElement("div");
+      ordine.className = "order-suggestion";
+      ordine.innerHTML =
+        "<span>Ordine consigliato</span><strong>" +
+        daOrdinare +
+        " " +
+        (item.unita || "") +
+        "</strong>";
+
+      dettaglio.appendChild(attuale);
+      dettaglio.appendChild(minima);
+      dettaglio.appendChild(ordine);
+
+      var nota = document.createElement("small");
+      nota.textContent =
+        "Suggerimento: ordina abbastanza per tornare circa al doppio della soglia minima.";
+
+      card.appendChild(titolo);
+      card.appendChild(fornitore);
+      card.appendChild(dettaglio);
+      card.appendChild(nota);
+
+      container.appendChild(card);
+    });
+  }
+
+  var navOrders = document.getElementById("nav-orders");
+  if (navOrders) {
+    navOrders.addEventListener("click", function () {
+      setTimeout(aggiornaOrdiniConsigliati, 200);
+    });
+  }
+
+  var form = document.getElementById("merce-form");
+  if (form) {
+    form.addEventListener("submit", function () {
+      setTimeout(aggiornaOrdiniConsigliati, 500);
+    });
+  }
+
+  var lista = document.getElementById("merce-list");
+  if (lista) {
+    var osservatore = new MutationObserver(function () {
+      aggiornaOrdiniConsigliati();
+    });
+
+    osservatore.observe(lista, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  setTimeout(aggiornaOrdiniConsigliati, 500);
+  setTimeout(aggiornaOrdiniConsigliati, 1500);
+});
