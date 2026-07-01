@@ -552,3 +552,116 @@ document.addEventListener("DOMContentLoaded", function () {
 
   renderMerceAvanzata();
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceBadge() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numero(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function giorniAllaScadenza(data) {
+    if (!data) return null;
+
+    var oggi = new Date();
+    oggi.setHours(0, 0, 0, 0);
+
+    var scadenza = new Date(data);
+    scadenza.setHours(0, 0, 0, 0);
+
+    var differenza = scadenza - oggi;
+    return Math.ceil(differenza / (1000 * 60 * 60 * 24));
+  }
+
+  function statoMerce(item) {
+    var quantita = numero(item.quantita);
+    var soglia = numero(item.soglia);
+    var giorni = giorniAllaScadenza(item.scadenza);
+
+    if (giorni !== null && giorni < 0) {
+      return {
+        testo: "Scaduto",
+        classe: "status-expiring"
+      };
+    }
+
+    if (giorni !== null && giorni <= 3) {
+      return {
+        testo: "In scadenza",
+        classe: "status-expiring"
+      };
+    }
+
+    if (soglia > 0 && quantita <= soglia) {
+      return {
+        testo: "Sotto soglia",
+        classe: "status-low"
+      };
+    }
+
+    return {
+      testo: "OK",
+      classe: "status-ok"
+    };
+  }
+
+  function aggiornaBadgeMerce() {
+    var merce = leggiMerceBadge();
+    var cards = document.querySelectorAll("#merce-list .product-card");
+
+    cards.forEach(function (card, index) {
+      var titolo = card.querySelector("h3");
+      var badge = card.querySelector(".status-dot");
+
+      if (!titolo || !badge) return;
+
+      var nomeCard = titolo.textContent.trim();
+
+      var item = merce.find(function (prodotto) {
+        return String(prodotto.nome || "").trim() === nomeCard;
+      }) || merce[index];
+
+      if (!item) return;
+
+      var stato = statoMerce(item);
+
+      badge.textContent = stato.testo;
+      badge.className = "status-dot " + stato.classe;
+    });
+  }
+
+  var lista = document.getElementById("merce-list");
+
+  if (lista) {
+    var osservatore = new MutationObserver(function () {
+      aggiornaBadgeMerce();
+    });
+
+    osservatore.observe(lista, {
+      childList: true
+    });
+  }
+
+  var form = document.getElementById("merce-form");
+  if (form) {
+    form.addEventListener("submit", function () {
+      setTimeout(aggiornaBadgeMerce, 300);
+    });
+  }
+
+  var navMerce = document.getElementById("nav-merchandise");
+  if (navMerce) {
+    navMerce.addEventListener("click", function () {
+      setTimeout(aggiornaBadgeMerce, 300);
+    });
+  }
+
+  setTimeout(aggiornaBadgeMerce, 300);
+  setTimeout(aggiornaBadgeMerce, 1000);
+});
