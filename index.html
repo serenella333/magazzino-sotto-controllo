@@ -257,6 +257,23 @@ qq<!DOCTYPE html>
     <button type="submit">Aggiorna magazzino</button>
   </form>
 </div>
+            <div class="invoice-photo-box">
+  <h3>Foto fattura</h3>
+  <p>Scatta o carica una foto della fattura. L’app proverà a leggere prodotti e quantità.</p>
+
+  <input id="invoice-photo" type="file" accept="image/*" capture="environment">
+
+  <button id="ocr-invoice-btn" type="button">Leggi foto fattura</button>
+
+  <label>
+    Testo riconosciuto
+    <textarea id="ocr-invoice-text" rows="8" placeholder="Qui comparirà il testo letto dalla foto. Puoi correggerlo prima di caricare."></textarea>
+  </label>
+
+  <button id="import-ocr-lines-btn" type="button">Carica prodotti riconosciuti</button>
+
+  <pre id="ocr-invoice-output"></pre>
+</div>
         </section>
 
         <section id="section-waste" class="hidden">
@@ -289,7 +306,7 @@ qq<!DOCTYPE html>
     <footer>
         <p>© 2026 Magazzino Sotto Controllo</p>
     </footer>
-
-    <script src="app-v2.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="app-v2.js?v=25"></script>
 </body>
 </html>
