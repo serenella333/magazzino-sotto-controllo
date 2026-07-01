@@ -1115,3 +1115,145 @@ document.addEventListener("DOMContentLoaded", function () {
   setTimeout(aggiungiPulsanteModifica, 1500);
   setTimeout(aggiungiPulsanteModifica, 3000);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceDashboard() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numeroDashboard(valore) {
+    if (!valore) return 0;
+    return Number(String(valore).replace(",", "."));
+  }
+
+  function giorniAllaScadenzaDashboard(data) {
+    if (!data) return null;
+
+    var oggi = new Date();
+    oggi.setHours(0, 0, 0, 0);
+
+    var scadenza = new Date(data);
+    scadenza.setHours(0, 0, 0, 0);
+
+    return Math.ceil((scadenza - oggi) / (1000 * 60 * 60 * 24));
+  }
+
+  function aggiornaDashboardIntelligente() {
+    var merce = leggiMerceDashboard();
+
+    var sottoSoglia = merce.filter(function (item) {
+      var quantita = numeroDashboard(item.quantita);
+      var soglia = numeroDashboard(item.soglia);
+      return soglia > 0 && quantita <= soglia;
+    });
+
+    var inScadenza = merce.filter(function (item) {
+      var giorni = giorniAllaScadenzaDashboard(item.scadenza);
+      return giorni !== null && giorni <= 3;
+    });
+
+    var totaleEl = document.getElementById("dashboard-total-products");
+    var sottoEl = document.getElementById("dashboard-low-stock");
+    var scadenzaEl = document.getElementById("dashboard-expiring");
+    var ordiniEl = document.getElementById("dashboard-orders");
+    var summaryEl = document.getElementById("dashboard-summary");
+    var notificheEl = document.getElementById("dashboard-notifications");
+
+    if (totaleEl) totaleEl.textContent = merce.length;
+    if (sottoEl) sottoEl.textContent = sottoSoglia.length;
+    if (scadenzaEl) scadenzaEl.textContent = inScadenza.length;
+    if (ordiniEl) ordiniEl.textContent = sottoSoglia.length;
+
+    if (summaryEl) {
+      if (merce.length === 0) {
+        summaryEl.textContent = "Il magazzino è ancora vuoto. Inizia inserendo la merce principale.";
+      } else if (sottoSoglia.length === 0 && inScadenza.length === 0) {
+        summaryEl.textContent = "Situazione sotto controllo. Non ci sono urgenze in magazzino.";
+      } else {
+        summaryEl.textContent =
+          "Attenzione: " +
+          sottoSoglia.length +
+          " prodotti sono sotto soglia e " +
+          inScadenza.length +
+          " prodotti sono in scadenza.";
+      }
+    }
+
+    if (notificheEl) {
+      notificheEl.innerHTML = "";
+
+      if (merce.length === 0) {
+        var vuoto = document.createElement("li");
+        vuoto.textContent = "Aggiungi la prima merce per iniziare.";
+        notificheEl.appendChild(vuoto);
+        return;
+      }
+
+      sottoSoglia.forEach(function (item) {
+        var li = document.createElement("li");
+        li.textContent =
+          item.nome +
+          " è sotto soglia. Quantità attuale: " +
+          (item.quantita || "0") +
+          " " +
+          (item.unita || "") +
+          ".";
+        notificheEl.appendChild(li);
+      });
+
+      inScadenza.forEach(function (item) {
+        var giorni = giorniAllaScadenzaDashboard(item.scadenza);
+        var li = document.createElement("li");
+
+        if (giorni < 0) {
+          li.textContent = item.nome + " è scaduto.";
+        } else if (giorni === 0) {
+          li.textContent = item.nome + " scade oggi.";
+        } else {
+          li.textContent = item.nome + " scade tra " + giorni + " giorni.";
+        }
+
+        notificheEl.appendChild(li);
+      });
+
+      if (sottoSoglia.length === 0 && inScadenza.length === 0) {
+        var ok = document.createElement("li");
+        ok.textContent = "Nessun avviso urgente.";
+        notificheEl.appendChild(ok);
+      }
+    }
+  }
+
+  var form = document.getElementById("merce-form");
+  if (form) {
+    form.addEventListener("submit", function () {
+      setTimeout(aggiornaDashboardIntelligente, 300);
+      setTimeout(aggiornaDashboardIntelligente, 1000);
+    });
+  }
+
+  var lista = document.getElementById("merce-list");
+  if (lista) {
+    var osservatore = new MutationObserver(function () {
+      aggiornaDashboardIntelligente();
+    });
+
+    osservatore.observe(lista, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  var dashboardBtn = document.getElementById("nav-dashboard");
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener("click", function () {
+      setTimeout(aggiornaDashboardIntelligente, 300);
+    });
+  }
+
+  setTimeout(aggiornaDashboardIntelligente, 300);
+  setTimeout(aggiornaDashboardIntelligente, 1200);
+});
