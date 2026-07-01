@@ -3776,3 +3776,143 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setTimeout(renderAnalisiSprechi, 800);
 });
+document.addEventListener("DOMContentLoaded", function () {
+  function leggiMerceOrdiniCopy() {
+    try {
+      return JSON.parse(localStorage.getItem("magazzino_merce")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function numeroOrdiniCopy(valore) {
+    return Number(String(valore || "0").replace(",", ".")) || 0;
+  }
+
+  function arrotondaOrdiniCopy(valore) {
+    return Math.round(valore * 1000) / 1000;
+  }
+
+  function prodottiDaOrdinareCopy() {
+    var merce = leggiMerceOrdiniCopy();
+
+    return merce.filter(function (item) {
+      var quantita = numeroOrdiniCopy(item.quantita);
+      var soglia = numeroOrdiniCopy(item.soglia);
+
+      return soglia > 0 && quantita <= soglia;
+    });
+  }
+
+  function creaTestoOrdineCopy() {
+    var prodotti = prodottiDaOrdinareCopy();
+
+    if (prodotti.length === 0) {
+      return "Nessun ordine urgente. Le quantità sono sopra soglia.";
+    }
+
+    var gruppi = {};
+
+    prodotti.forEach(function (item) {
+      var fornitore = item.fornitore && item.fornitore.trim()
+        ? item.fornitore.trim()
+        : "Fornitore non indicato";
+
+      if (!gruppi[fornitore]) {
+        gruppi[fornitore] = [];
+      }
+
+      gruppi[fornitore].push(item);
+    });
+
+    var testo = "ORDINE CONSIGLIATO\n";
+    testo += "Magazzino Sotto Controllo\n";
+    testo += new Date().toLocaleDateString("it-IT") + "\n\n";
+
+    Object.keys(gruppi).forEach(function (fornitore) {
+      testo += "FORNITORE: " + fornitore + "\n";
+
+      gruppi[fornitore].forEach(function (item) {
+        var quantita = numeroOrdiniCopy(item.quantita);
+        var soglia = numeroOrdiniCopy(item.soglia);
+        var suggerito = arrotondaOrdiniCopy(Math.max(soglia * 2 - quantita, soglia));
+
+        testo += "- " + item.nome + ": ordinare circa " + suggerito + " " + (item.unita || "") + "\n";
+        testo += "  Giacenza attuale: " + quantita + " " + (item.unita || "") + " | Soglia: " + soglia + "\n";
+      });
+
+      testo += "\n";
+    });
+
+    return testo.trim();
+  }
+
+  function creaBoxCopiaOrdini() {
+    var section = document.getElementById("section-orders");
+    if (!section) return;
+
+    if (document.getElementById("copy-orders-box")) return;
+
+    var box = document.createElement("div");
+    box.id = "copy-orders-box";
+    box.className = "copy-orders-box";
+
+    box.innerHTML = `
+      <h3>Lista ordine pronta</h3>
+      <p>Copia il testo e mandalo al fornitore su WhatsApp o email.</p>
+
+      <button type="button" id="copy-orders-text-btn">Copia lista ordini</button>
+
+      <textarea id="orders-copy-text" rows="9" readonly></textarea>
+    `;
+
+    section.appendChild(box);
+
+    collegaCopiaOrdini();
+  }
+
+  function aggiornaBoxCopiaOrdini() {
+    creaBoxCopiaOrdini();
+
+    var textarea = document.getElementById("orders-copy-text");
+    if (!textarea) return;
+
+    textarea.value = creaTestoOrdineCopy();
+  }
+
+  function collegaCopiaOrdini() {
+    var btn = document.getElementById("copy-orders-text-btn");
+    var textarea = document.getElementById("orders-copy-text");
+
+    if (!btn || !textarea) return;
+
+    btn.addEventListener("click", function () {
+      textarea.value = creaTestoOrdineCopy();
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(textarea.value).then(function () {
+          alert("Lista ordini copiata. Ora puoi incollarla su WhatsApp o email.");
+        }).catch(function () {
+          document.execCommand("copy");
+          alert("Lista ordini copiata.");
+        });
+      } else {
+        document.execCommand("copy");
+        alert("Lista ordini copiata.");
+      }
+    });
+  }
+
+  var ordersBtn = document.getElementById("nav-orders");
+
+  if (ordersBtn) {
+    ordersBtn.addEventListener("click", function () {
+      setTimeout(aggiornaBoxCopiaOrdini, 400);
+      setTimeout(aggiornaBoxCopiaOrdini, 1000);
+    });
+  }
+
+  setTimeout(aggiornaBoxCopiaOrdini, 1200);
+});
