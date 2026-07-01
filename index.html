@@ -276,22 +276,55 @@ qq<!DOCTYPE html>
 </div>
         </section>
 
-        <section id="section-waste" class="hidden">
-            <h2>Registrazione sprechi / consumi</h2>
-            <form id="waste-form">
-                <input type="text" id="waste-product" placeholder="Prodotto" required>
-                <input type="number" id="waste-qty" placeholder="Quantità" required>
-                <select id="waste-reason">
-                    <option value="scaduto">Scaduto</option>
-                    <option value="preparazione">Errore preparazione</option>
-                    <option value="invenduto">Invenduto</option>
-                    <option value="omaggio">Omaggio</option>
-                    <option value="altro">Altro</option>
-                </select>
-                <button type="submit">Registra</button>
-            </form>
-            <ul id="waste-list"></ul>
-        </section>
+ <section id="section-waste" class="hidden">
+  <h2>Sprechi</h2>
+  <p>Registra merce buttata, invenduto, errori, omaggi o pasti staff.</p>
+
+  <datalist id="waste-merce-names"></datalist>
+
+  <form id="waste-form" class="app-form">
+    <h3>Nuovo spreco</h3>
+
+    <label>
+      Prodotto
+      <input id="waste-product" type="text" list="waste-merce-names" placeholder="Es. Mozzarella, pomodori, pane..." required>
+    </label>
+
+    <div class="form-grid">
+      <label>
+        Quantità
+        <input id="waste-qty" type="number" step="0.001" placeholder="Es. 2" required>
+      </label>
+
+      <label>
+        Motivo
+        <select id="waste-reason">
+          <option value="Scaduto">Scaduto</option>
+          <option value="Invenduto">Invenduto</option>
+          <option value="Errore preparazione">Errore preparazione</option>
+          <option value="Caduto / rovinato">Caduto / rovinato</option>
+          <option value="Staff meal">Staff meal</option>
+          <option value="Omaggio">Omaggio</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </label>
+    </div>
+
+    <label>
+      Nota
+      <input id="waste-note" type="text" placeholder="Es. salsa preparata male, pane avanzato, prodotto scaduto...">
+    </label>
+
+    <button type="submit">Registra spreco</button>
+  </form>
+
+  <div id="waste-list" class="waste-list">
+    <div class="empty-state">
+      <strong>Nessuno spreco registrato</strong><br>
+      Quando registri uno spreco, lo vedrai qui.
+    </div>
+  </div>
+</section>
 
         <section id="section-orders" class="hidden">
             <h2>Ordini consigliati</h2>
